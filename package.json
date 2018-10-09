@@ -1,0 +1,24 @@
+{
+  "name": "discreet-request",
+  "version": "0.0.1",
+  "description": "An unobtrusive request library for web scrapers and APIs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "request",
+    "http",
+    "web",
+    "scraper",
+    "scrape",
+    "discreet"
+  ],
+  "author": "Daniel Lucas",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.3.2",
+    "request": "^2.88.0",
+    "throttled-request": "^0.1.1"
+  }
+}
