@@ -87,7 +87,7 @@ class DiscreetRequest {
    * @param {object} requestOptions - request object to be forwarded to the node request library
    * @param {object} protocol - either HTTP or HTTPS
    */
-  request(requestOptions, proxyAuth, protocol='http') {
+  request(requestOptions, protocol='http') {
     return new Promise((resolve, reject) => {
       if (this.initComplete) {
         let userAgent = this.getRandomUserAgent();

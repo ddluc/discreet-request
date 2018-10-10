@@ -11,31 +11,46 @@ This module a wrapper around the popular node request library for creating discr
 
 Before scraping any data from a website, please refer and abide by the Terms of Service.
 
-## Getting Started
-
-#### Install
+## Example:
 
 ```
-npm install discreet-requests
+let proxies = [
+  105.260.10.194:80,
+  76.25.235.161:80,
+  193.242.216.47:80,
+  147.154.70.117:80,
+  166.242.216.47:80
+];
+let throttleConfig = {
+    requests: 1,
+    milliseconds: 600
+};
+let proxyAuth = {
+  username: process.env.PROXY_USERNAME,
+  password: process.env.PROXY_PASSWORD
+}
+discreet.init(proxies, proxyAuth, throttleConfig);
 ```
 
-#### Set Up Your Environment:
+## Usage
 
 ```
-PROXY_USERNAME=[USERNAME]
-PROXY_PASSWORD=[PASSWORD]
+discreet.init(proxies<Array>, proxyAuth<Object>, throttleConfig<Object>);
 ```
 
-#### Setup Your Proxies
+| Option           | Value          |
+| :-------------   | :------------- |
+| `proxies`        | an array of proxies to use for discreet requests, such as `105.260.10.194:80`|
+| `proxyAuth`      | an object containing the proxy username and password: `{username: '...', password: '...'}`|
+| `throttleConfig` | an object containing the throttle config: `{requests: 1, milliseconds: 200}`  |
+| `userAgents`     | an array of User Agents, if not using the default User Agents |
 
-This module _does not_ provide you with proxy servers. You must acquire your own proxy servers, and copy their addresses in a `.proxy` file in the root of your application. There are free proxy lists, but they generally preform poorly and are unreliable. For any real project you will want to purchase your own premium proxies. This module does not recommend any premium proxy provider.
-
-Example `.proxy` file:
 
 ```
-105.260.10.194:80
-76.25.235.161:80
-193.242.216.47:80
-147.154.70.117:80
-166.242.216.47:80
+discreet.request(requestOptions<Object>, protocol<String>);
 ```
+
+| Option           | Value          |
+| :-------------   | :------------- |
+| `proxies`        | the request options. See request documentation for more details |
+| `protocol`       | either 'http' or 'https' |
