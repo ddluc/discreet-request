@@ -3,86 +3,117 @@
  * @description generates throttled http requests using rotating proxies and fake user agents
  */
 
-const fs = require('fs'),
-      request = require('request'),
+const request = require('request'),
       throttledRequest = require('throttled-request')(request),
+      defaultUserAgents = require('./util/userAgents'),
       error = require('./util/error'),
       logger = require('./util/logger');
 
+class DiscreetRequest {
 
-//configure the request throttler
-throttledRequest.configure({
-  requests: 1,
-  milliseconds: 1000
-});
+  /**
+   * @description sets the default options for the DiscreetRequest instance
+   */
+  constructor() {
+    this.throttleConfig = {
+        // determines how many requests are made
+        requests: 1,
+        // determines the frequency at which requests are made
+        milliseconds: 500
+    };
+    // flag to determine if the instance has been properly initialized
+    this.initComplete = false;
+    /// list of the user's proxies
+    this.proxies = [];
+    // the username and password for the proxies
+    this.proxyAuth = {
+      username: '',
+      password: ''
+    };
+    // list of user agents, with provided defaults
+    this.userAgents = defaultUserAgents;
+  }
 
-/**
- * getProxy
- * @description scrapes the first 20 proxies off of https://free-proxy-list.net/
- * then selects a random proxy address
- * @returns {Promise}<string> proxy - the proxy address to use for the descreet request
- */
-const getProxy = () => {
-  let proxiesString = fs.readFileSync(`${process.cwd()}/.proxy`, 'utf8');
-  let proxies = proxiesString.split("\n")
-        .filter(proxy => proxy.length > 0);
-  let randomIndex = Math.floor(Math.random() * Math.floor(proxies.length - 1));
-  return proxies[randomIndex];
-}
+  /**
+   * init
+   * @description sets the config for the discreet request class
+   * @param {proxies} - the list of proxy addresses to use for requests
+   * @param {proxyAuth} - the username and password for the proxies
+   * @param {throttleConfig} - the request throttler configuration
+   * @returns null
+   */
+  init(proxies=[], proxyAuth=null, throttleConfig=null, userAgents=null) {
+    this.proxies = proxies;
+    this.proxyAuth = proxyAuth ? proxyAuth : this.proxyAuth;
+    this.throttleConfig = throttleConfig ? throttleConfig : this.throttleConfig;
+    this.userAgents = userAgents ? userAgents : this.userAgents;
+    throttledRequest.configure(throttleConfig);
+    this.initComplete = true;
+  }
 
-/**
- * getUserAgents
- * @description generates a random user agent
- */
-const getUserAgent = () => {
-  const userAgents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 5.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-    'Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)',
-    'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko',
-    'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)',
-    'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko',
-    'Mozilla/5.0 (Windows NT 6.2; WOW64; Trident/7.0; rv:11.0) like Gecko',
-    'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko',
-    'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)',
-    'Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko',
-    'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)',
-    'Mozilla/5.0 (Windows NT 6.1; Win64; x64; Trident/7.0; rv:11.0) like Gecko',
-    'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)',
-    'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
-    'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)'
-  ];
-  let randomIndex = Math.floor(Math.random() * Math.floor(userAgents.length - 1));
-  return userAgents[randomIndex];
-}
+  /**
+   * getRandomProxy
+   * @description returns a random proxy from the list of proxies
+   * @returns {string} proxy - the proxy address to use for the descreet request
+   * @returns {boolean} false - if there are no proxies to use
+   */
+  getRandomProxy() {
+    if (this.proxies.length > 0) {
+      let randomIndex = Math.floor(Math.random() * Math.floor(this.proxies.length - 1));
+      return this.proxies[randomIndex];
+    } else {
+      return false;
+    }
+  }
 
-/**
- *
- * @description the exported function that generates the request
- * @param {object} options - request object to be forwarded to the node request library
- * @param {object} protocol - either HTTP or HTTPS
- */
-module.exports = (options, protocol='http') => {
-  return new Promise((resolve, reject) => {
-    let userAgent = getUserAgent();
-    let proxy = getProxy();
-    options.proxy = `${protocol}://${proxy}:${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}`;
-    options.headers = {'User-Agent': userAgent};
-    logger.dev(`Creating discreet request with proxy address ${options.proxy} and User Agent ${options.headers['User-Agent']}`);
-    throttledRequest(options, (err, response, body)=> {
-      if (err) {
-        logger.error(err);
-        throw new error.NetworkError(`Could not complete request to ${options.uri}`);
+  /**
+   * getRandomUserAgent
+   * @description returns a random userAgent from this list of user agents
+   * @returns {string} proxy - the proxy address to use for the descreet request
+   * @returns {boolean} false - if there are no userAgents to use
+   */
+  getRandomUserAgent() {
+    if (this.userAgents.length > 0) {
+      let randomIndex = Math.floor(Math.random() * Math.floor(this.userAgents.length - 1));
+      return this.userAgents[randomIndex];
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   *
+   * @description generates the discreet request
+   * @param {object} requestOptions - request object to be forwarded to the node request library
+   * @param {object} protocol - either HTTP or HTTPS
+   */
+  request(requestOptions, proxyAuth, protocol='http') {
+    return new Promise((resolve, reject) => {
+      if (this.initComplete) {
+        let userAgent = this.getRandomUserAgent();
+        let proxy = this.getRandomProxy();
+        if (proxy) {
+          requestOptions.proxy = `${protocol}://${proxy}:${this.proxyAuth.username}:${this.proxyAuth.password}`;
+        }
+        if (userAgent) {
+          requestOptions.headers = {'User-Agent': userAgent};
+        }
+        logger.dev(`Creating discreet request with proxy address ${proxy} and User Agent ${userAgent}`);
+        throttledRequest(requestOptions, (err, response, body) => {
+          if (err) {
+            logger.error(err);
+            reject(new error.NetworkError(`Could not complete request to ${requestOptions.uri}`));
+          } else {
+            resolve(response);
+          }
+        });
+      } else {
+        logger.warn('You must first init the discreet instance before making a request calling discreet.init(...)');
+        reject(new error.ProxyError('ERROR: discreet requests was not initialized'));
       }
-      resolve(body);
     });
-  });
+  }
+
 }
+
+module.exports = new DiscreetRequest();
