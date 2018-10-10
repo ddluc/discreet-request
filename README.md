@@ -11,27 +11,6 @@ This module a wrapper around the popular node request library for creating discr
 
 Before scraping any data from a website, please refer and abide by the Terms of Service.
 
-## Example:
-
-```
-let proxies = [
-  105.260.10.194:80,
-  76.25.235.161:80,
-  193.242.216.47:80,
-  147.154.70.117:80,
-  166.242.216.47:80
-];
-let throttleConfig = {
-    requests: 1,
-    milliseconds: 600
-};
-let proxyAuth = {
-  username: process.env.PROXY_USERNAME,
-  password: process.env.PROXY_PASSWORD
-}
-discreet.init(proxies, proxyAuth, throttleConfig);
-```
-
 ## Usage
 
 ```
@@ -54,3 +33,39 @@ discreet.request(requestOptions<Object>, protocol<String>);
 | :-------------   | :------------- |
 | `proxies`        | the request options. See request documentation for more details |
 | `protocol`       | either 'http' or 'https' |
+
+
+## Example:
+
+```
+discreet = require('discreet-request');
+
+let proxies = [
+  105.260.10.194:80,
+  76.25.235.161:80,
+  193.242.216.47:80,
+  147.154.70.117:80,
+  166.242.216.47:80
+];
+let throttleConfig = {
+    requests: 1,
+    milliseconds: 600
+};
+let proxyAuth = {
+  username: process.env.PROXY_USERNAME,
+  password: process.env.PROXY_PASSWORD
+}
+discreet.init(proxies, proxyAuth, throttleConfig);
+
+let options = {
+  uri = 'https://google.com',
+  method: 'GET'
+};
+
+discreet.request(options).then((response) => {
+  ...
+})
+.catch((error) => {
+  throw error
+});
+```
