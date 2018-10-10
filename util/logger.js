@@ -12,7 +12,7 @@ module.exports = {
    * @param {string} msg - the message to log
    */
   'info': function(msg='') {
-    console.log(colors.green(msg));
+    console.log(colors.cyan(msg));
   },
 
   /**
@@ -40,7 +40,7 @@ module.exports = {
    */
   'dev': function(msg='') {
     if (process.env.NODE_ENV == 'development') {
-      console.log(colors.grey(msg));
+      console.log(colors.green(msg));
     }
   }
 

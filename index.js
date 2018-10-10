@@ -93,16 +93,18 @@ class DiscreetRequest {
         let userAgent = this.getRandomUserAgent();
         let proxy = this.getRandomProxy();
         if (proxy) {
-          requestOptions.proxy = `${protocol}://${proxy}:${this.proxyAuth.username}:${this.proxyAuth.password}`;
+          requestOptions.proxy = `${protocol}://${this.proxyAuth.username}:${this.proxyAuth.password}@${proxy}`;
+          logger.dev(`Creating discreet request with proxy address ${requestOptions.proxy}`);
         }
         if (userAgent) {
           requestOptions.headers = {'User-Agent': userAgent};
         }
-        logger.dev(`Creating discreet request with proxy address ${proxy} and User Agent ${userAgent}`);
         throttledRequest(requestOptions, (err, response, body) => {
           if (err) {
             logger.error(err);
             reject(new error.NetworkError(`Could not complete request to ${requestOptions.uri}`));
+          } else if (response && response.statusCode === 407) {
+            reject(new error.ProxyError('ERROR: Could not authenticate with the proxy'));
           } else {
             resolve(response);
           }
