@@ -30,6 +30,7 @@ class DiscreetRequest {
       username: '',
       password: ''
     };
+    this.redis = null;
     // list of user agents, with provided defaults
     this.userAgents = defaultUserAgents;
   }
@@ -37,16 +38,20 @@ class DiscreetRequest {
   /**
    * init
    * @description sets the config for the discreet request class
-   * @param {proxies} - the list of proxy addresses to use for requests
-   * @param {proxyAuth} - the username and password for the proxies
-   * @param {throttleConfig} - the request throttler configuration
+   * @param {array} proxies - the list of proxy addresses to use for requests
+   * @param {object} proxyAuth - the username and password for the proxies
+   * @param {object} throttleConfig - the request throttler configuration
+   * @param {class} redis - the redis client
+   * @param {array} userAgents - list of custom user agents (overrides default list)
    * @returns null
    */
-  init(proxies=[], proxyAuth=null, throttleConfig=null, userAgents=null) {
+  init(proxies=[], proxyAuth=null, throttleConfig=null, redis=null, userAgents=null) {
+    // TODO: refactor method to accept a single options argument
     this.proxies = proxies;
     this.proxyAuth = proxyAuth ? proxyAuth : this.proxyAuth;
     this.throttleConfig = throttleConfig ? throttleConfig : this.throttleConfig;
     this.userAgents = userAgents ? userAgents : this.userAgents;
+    this.redis = redis;
     throttledRequest.configure(throttleConfig);
     this.initComplete = true;
   }
@@ -82,32 +87,84 @@ class DiscreetRequest {
   }
 
   /**
+   * @description stores the data returned from an endpoint in the redis cache.
+   *              Since we don't immediately need this can be safely be done async.
+   * @param {string} endpoint - the endpoint url to be cached
+   * @param {data} data - the data to be stored
+   */
+  cacheEndpoint(endpoint, data) {
+    // check to make sure that redis is configured
+    if (this.redis) {
+      logger.dev(`Caching Endpoint: ${endpoint}`);
+      this.redis.set(endpoint, data.toString());
+    }
+  }
+
+  /**
+   * @description loads the cached endpoint data
+   */
+  loadEndpointCache(endpoint) {
+    return new Promise((resolve, reject) => {
+      if (this.redis) {
+        this.redis.get(endpoint, (err, data) => {
+          if (err) reject(err);
+          else if (data !== null) {
+            logger.dev(`Loading endpoint from cache: ${endpoint}`);
+            let response = {
+              body: data,
+              statusCode: 304,
+              cached: true
+            };
+            resolve(response);
+          }
+          resolve(null);
+        });
+      } else {
+        resolve(null);
+      }
+    });
+  }
+
+  /**
    *
    * @description generates the discreet request
+   * @param {string} url -the url to request data from
    * @param {object} requestOptions - request object to be forwarded to the node request library
    * @param {object} protocol - either HTTP or HTTPS
    */
-  request(requestOptions, protocol='http') {
+  request(url, requestOptions, protocol='http') {
     return new Promise((resolve, reject) => {
       if (this.initComplete) {
-        let userAgent = this.getRandomUserAgent();
-        let proxy = this.getRandomProxy();
-        if (proxy) {
-          requestOptions.proxy = `${protocol}://${this.proxyAuth.username}:${this.proxyAuth.password}@${proxy}`;
-          logger.dev(`Creating discreet request with proxy address ${requestOptions.proxy}`);
-        }
-        if (userAgent) {
-          requestOptions.headers = {'User-Agent': userAgent};
-        }
-        throttledRequest(requestOptions, (err, response, body) => {
-          if (err) {
-            logger.error(err);
-            reject(new error.NetworkError(`Could not complete request to ${requestOptions.uri}`));
-          } else if (response && response.statusCode === 407) {
-            reject(new error.ProxyError('ERROR: Could not authenticate with the proxy'));
+        this.loadEndpointCache(url).then((data) => {
+          if (data !== null) {
+            resolve(data);
           } else {
-            resolve(response);
+            requestOptions.url = url;
+            let userAgent = this.getRandomUserAgent();
+            let proxy = this.getRandomProxy();
+            if (proxy) {
+              // TODO: refactor protocol -- set this on .init()
+              requestOptions.proxy = `${protocol}://${this.proxyAuth.username}:${this.proxyAuth.password}@${proxy}`;
+              logger.dev(`Creating discreet request with proxy address ${requestOptions.proxy}`);
+            }
+            if (userAgent) {
+              requestOptions.headers = {'User-Agent': userAgent};
+            }
+            throttledRequest(requestOptions, (err, response, body) => {
+              if (err) {
+                logger.error(err);
+                reject(new error.NetworkError(`Could not complete request to ${url}`));
+              } else if (response && response.statusCode === 407) {
+                reject(new error.ProxyError('ERROR: Could not authenticate with the proxy'));
+              } else {
+                this.cacheEndpoint(url, response.body);
+                resolve(response);
+              }
+            });
           }
+        })
+        .catch((err) => {
+          resolve(err);
         });
       } else {
         logger.warn('You must first init the discreet instance before making a request calling discreet.init(...)');
