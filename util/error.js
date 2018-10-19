@@ -23,7 +23,14 @@ class ProxyError extends ErrorBase {
  }
 }
 
+class RedisError extends ErrorBase {
+ constructor(m) {
+   super(m);
+ }
+}
+
 module.exports = {
   NetworkError,
-  ProxyError
+  ProxyError,
+  RedisError
 };
