@@ -41,16 +41,19 @@ class DiscreetRequest {
   /**
    * init
    * @description sets the config for the discreet request class
-   * @param {array} proxies - the list of proxy addresses to use for requests
-   * @param {object} proxyAuth - the username and password for the proxies
-   * @param {object} throttleConfig - the request throttler configuration
-   * @param {class} redis - the redis client
-   * @param {array} userAgents - list of custom user agents (overrides default list)
-   * @param {string} protocol - the protocol to use for the proxy list http v.s. https
+   * @param {object} options - the configuration object
+   * @see constructor above for a description for each option
    * @returns null
    */
-  init(proxies=[], proxyAuth=null, throttleConfig=null, redis=null, userAgents=null, protocol=null) {
-    // TODO: refactor method to accept a single options argument
+  init(options={}) {
+    const {
+      proxies = [],
+      proxyAuth = null,
+      throttleConfig = null,
+      redis = null,
+      protocol = null,
+      userAgents = null
+    } = options;
     this.proxies = proxies;
     this.proxyAuth = proxyAuth ? proxyAuth : this.proxyAuth;
     this.protocol = protocol ? protocol : this.protocol;
