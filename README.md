@@ -24,21 +24,22 @@ const discreet = require('discreet-request');
 
 ### `discreet.init(options<Object>)`
 
-The available `options`:
+The available **`options<Object>`**:
 
-* `proxies<Array>`: An array of proxy addresses to use for discreet requests, such as `105.260.10.194:80`. Default `[]`.
-* `proxyAuth<Object>`: An object containing the proxy username and password such as `{ username: '...', password: '...'}`. Required.
-* `proxyPoolConfig<Object>`: See the ProxyPool documentation below
-* `protocol`<String>: Determines which protocol to use with the proxies. Either `http` or `https`. For customizing request tunneling config, see the node [request](https://github.com/request/request) documentation and set the proper config your request using the `requestOptions`. Default: `http`.
-* `throttleConfig`<Object>: An object containing a `request` property, which designatees the number of requests to make per batch, and a `milliseconds` property, which defines how frequently a batch is executed. Default: `{ requests: 1, milliseconds: 500}`
-* `userAgents`<Array>: An array of User Agents, if not using the default User Agents. Default: An array of provided user agents from the library.
-* `redis`<RedisClient>: A redis client created by calling `redis.createClient();`. *Note: The library does not depend on or manage a redis instance, you will need to configure your own redis server and provide the library an instance to a redis client*. Default `null`.
-* `cacheTTL`<Number>: Set how long a resource should be cached before it's cleared. Only applicable if a redis instance is provided. Default `86400` (1 day).
+* **`proxies<Array>`**: An array of proxy addresses to use for discreet requests, such as `105.260.10.194:80`. Default `[]`.
+* **`proxyAuth<Object>`**: An object containing the proxy username and password such as `{ username: '...', password: '...'}`. Required.
+* **`proxyPoolConfig<Object>`**: See the ProxyPool documentation below
+* **`protocol<String>`**: Determines which protocol to use with the proxies. Either `http` or `https`. For customizing request tunneling config, see the node [request](https://github.com/request/request) documentation and set the proper config your request using the `requestOptions`. Default: `http`.
+* **`throttleConfig<Object>`**: An object containing a `request` property, which designatees the number of requests to make per batch, and a `milliseconds` property, which defines how frequently a batch is executed. Default: `{ requests: 1, milliseconds: 500}`
+* **`userAgents<Array>`**: An array of User Agents, if not using the default User Agents. Default: An array of provided user agents from the library.
+* **`redis<RedisClient>`**: A redis client created by calling `redis.createClient();`. *Note: The library does not depend on or manage a redis instance, you will need to configure your own redis server and provide the library an instance to a redis client*. Default `null`.
+* **`cacheTTL<Number>`**: Set how long a resource should be cached before it's cleared. Only applicable if a redis instance is provided. Default `86400` (1 day).
+
 
 ### `discreet.request(url<String>, requestOptions<Object>)`
 
-* `url`<String>: The url to request
-* `requestOptions`<Object>: The options to forward to the underlying node [request](https://github.com/request/request) library
+* **`url<String>`**: The url to request
+* **`requestOptions<Object>`**: The options to forward to the underlying node [request](https://github.com/request/request) library
 
 
 ## ProxyPool
@@ -47,14 +48,14 @@ The `ProxyPool` class the the underlying data structure that the `Discreet` clas
 
 ### `ProxyPool.constructor(proxies<Array>, options<Object>)`
 
-`proxies`: The list of proxies to use. This is provided by default when setting the proxies using `discreet.init(options)`.
+* **`proxies<Array>`**: The list of proxies to use. This is provided by default when setting the proxies using `discreet.init(options)`.
 
-The available `options`:
+The available **`options<Object>`**:
 
-* `targetEndpoint`<String>: The endpoint to test the proxies against. Default: `http://bing.com`.
-* `failureCases`<Array>: The status codes that flag a "dead/inoperable proxy". Default `[407, 403, 408]`.
-* `refreshProxies`<Boolean>:  flag that indicates whether or not the proxies should be monitored and refreshed. Default: `false`
-* `refreshRate`<Number>: How often the proxies are refreshed in milliseconds. Only applicable if `refreshProxies` is enabled. Default: `3600000`
+* **`targetEndpoint<String>`**: The endpoint to test the proxies against. Default: `http://bing.com`.
+* **`failureCases<Array>`**: The status codes that flag a "dead/inoperable proxy". Default `[407, 403, 408]`.
+* **`refreshProxies<Boolean>`**:  flag that indicates whether or not the proxies should be monitored and refreshed. Default: `false`
+* **`refreshRate<Number>`**: How often the proxies are refreshed in milliseconds. Only applicable if `refreshProxies` is enabled. Default: `3600000`
 
 
 ## Example Setup:
