@@ -4,10 +4,8 @@
   "description": "An unobtrusive request library for web scrapers and APIs",
   "main": "index.js",
   "scripts": {
-    "scripts": {
-      "test": "export ENV=test; mocha --exit; export ENV=development;",
-      "test-debug": "export ENV=test; mocha debug --exit; export ENV=development;"
-    },
+    "test": "export ENV=test; mocha --exit; export ENV=development;",
+    "test-debug": "export ENV=test; mocha debug --exit; export ENV=development;"
   },
   "repository": {
     "type": "git",
