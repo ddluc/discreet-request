@@ -4,7 +4,10 @@
   "description": "An unobtrusive request library for web scrapers and APIs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "scripts": {
+      "test": "export ENV=test; mocha --exit; export ENV=development;",
+      "test-debug": "export ENV=test; mocha debug --exit; export ENV=development;"
+    },
   },
   "repository": {
     "type": "git",
@@ -24,5 +27,9 @@
     "colors": "^1.3.2",
     "request": "^2.88.0",
     "throttled-request": "^0.1.1"
+  },
+  "devDependencies": {
+    "redis": "^2.8.0",
+    "mocha": "^5.2.0"
   }
 }
