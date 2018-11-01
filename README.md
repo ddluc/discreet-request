@@ -11,9 +11,9 @@ This module a wrapper around the popular node [request](https://github.com/reque
 
 Before scraping any data from a website, please refer and abide by the Terms of Service.
 
-# Usage
+## Usage
 
-## Discreet
+### `Discreet`
 
 The discreet-request module returns a singleton instance of the `Discreet` class, which will be used throughout the lifespan of the application.
 
@@ -22,12 +22,12 @@ The discreet-request module returns a singleton instance of the `Discreet` class
 const discreet = require('discreet-request');
 ```
 
-### `discreet.init(options<Object>)`
+#### `discreet.init(options<Object>)`
 
 The available **`options<Object>`**:
 
 * **`proxies<Array>`**: An array of proxy addresses to use for discreet requests, such as `105.260.10.194:80`. Default `[]`.
-* **`proxyAuth<Object>`**: An object containing the proxy username and password such as `{ username: '...', password: '...'}`. If no auth is provided then the request will be made to the proxy without any credentials. 
+* **`proxyAuth<Object>`**: An object containing the proxy username and password such as `{ username: '...', password: '...'}`. If no auth is provided then the request will be made to the proxy without any credentials.
 * **`proxyPoolConfig<Object>`**: The underlying proxy pool configuration
     * **`targetEndpoint<String>`**: The endpoint to test the proxies against. Default: `http://bing.com`.
     * **`failureCases<Array>`**: The status codes that flag a "dead/inoperable proxy". Default `[407, 403, 408]`.
@@ -42,7 +42,7 @@ The available **`options<Object>`**:
 **Returns:** `true`
 
 
-### `discreet.request(url<String>, requestOptions<Object>)`
+#### `discreet.request(url<String>, requestOptions<Object>)`
 
 The `request` method will make a new request to the provided `url`, using the provided `requestOptions`. It will *not* cache the body of the response.
 
@@ -62,7 +62,7 @@ let formattedResponse = {
 };
 ```
 
-### `discreet.cachedRequest(url<String>, requestOptions<Object>)`
+#### `discreet.cachedRequest(url<String>, requestOptions<Object>)`
 
 The `cachedRequest` method will first attempt to load the response body for the provided endpoint from the cache. If it's available, it will return the response body without making a request to the resource. If the data for the provided endpoint is not available, it will make a new request using the `request` method. The response will then be stored in the cache for the designated cache TTL (Default 1 Day).
 
@@ -85,11 +85,11 @@ A couple of notes:
 * The statusCode might be `null` if no request is made.
 * The full response will be `null`.
 
-## ProxyPool
+### `ProxyPool`
 
 The `ProxyPool` class the the underlying data structure that the `Discreet` class uses to test and manage the provided list of proxies. It's not accessible directly, but if needed, the instance lives under `discreet.proxyPool`.
 
-## Example Setup:
+### Example Setup:
 
 ```
 discreet = require('discreet-request');
