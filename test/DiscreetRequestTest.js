@@ -63,6 +63,9 @@ module.exports = function() {
       it('should cache the response body, if a new request is made', () => {
 
       });
+      it('should reject a RedisError if a redisClient was not provided', () => {
+
+      }); 
     });
 
     describe('#request', () => {

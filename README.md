@@ -5,8 +5,8 @@ This module a wrapper around the popular node [request](https://github.com/reque
 ## Features:
 
 * Creates requests using rotating proxies and user agents
-* Throttles requests using a timeout
-* Maintains a proxy pool that drops dead or blocked proxiesString
+* Throttles requests using a rate limiter
+* Maintains a proxy pool that drops dead or blocked proxies.
 * Implements a request cache to avoid making unnecessary requests to the requested resource
 
 Before scraping any data from a website, please refer and abide by the Terms of Service.
