@@ -12,7 +12,9 @@ module.exports = {
    * @param {string} msg - the message to log
    */
   'info': function(msg='') {
-    console.log(colors.cyan(msg));
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(colors.cyan(msg));
+    }
   },
 
   /**
@@ -21,7 +23,9 @@ module.exports = {
    * @param {string} msg - the message to log
    */
   'warn': function(msg='') {
-    console.log(colors.yellow(msg));
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(colors.yellow(msg));
+    }
   },
 
   /**

@@ -1,3 +1,10 @@
-let DiscreetRequestTest = require('./DiscreetRequestTest');
+const sinon = require('sinon');
+const DiscreetRequestTest = require('./DiscreetRequestTest'),
+      ProxyPoolTest = require('./ProxyPoolTest');
 
-DiscreetRequestTest(); 
+DiscreetRequestTest();
+ProxyPoolTest(); 
+
+afterEach(() => {
+  sinon.restore();
+});
