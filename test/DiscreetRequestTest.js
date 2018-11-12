@@ -7,23 +7,34 @@ const DiscreetRequest = require('../lib/DiscreetRequest');
       Throttler = require('../lib/Throttler'),
       error = require('../util/error'),
       defaultUserAgents = require('../util/userAgents'),
+      mockResponses = require('./mockResponses');
 
 module.exports = function() {
 
   describe('DiscreetRequest', () => {
-
 
     // Load Proxies
     let proxiesString = fs.readFileSync(`${process.cwd()}/.proxy`, 'utf8');
     let proxies = proxiesString.split("\n")
          .filter(proxy => proxy.length > 0);
 
-    // Define mock HTTP responses:
-    let mockSuccessResponse = {
-      statusCode: 200,
-      statusMessage: 'OK',
-      body: 'mock_success_body_content',
-    };
+   let defaultOptions = {
+     proxies,
+     proxyPoolConfig: { testProxies: false },
+     throttleConfig: {
+       requests: 1,
+       milliseconds: 600
+     },
+     proxyAuth: {
+       username: 'ddluc',
+       password: 'test'
+     },
+     redis: {
+       get: (endpoint) => true,
+       set: (endpoint, body) => true
+     },
+     userAgents: defaultUserAgents
+   };
 
     describe('#constructor', () => {
       let discreet = new DiscreetRequest();
@@ -86,34 +97,17 @@ module.exports = function() {
     });
 
     describe('#request', () => {
+
       let discreet = new DiscreetRequest();
-      // Reset the discreet instance for the remaining tests
-      let options = {
-        proxies,
-        proxyPoolConfig: { testProxies: false },
-        throttleConfig: {
-          requests: 1,
-          milliseconds: 600
-        },
-        proxyAuth: {
-          username: 'ddluc',
-          password: 'test'
-        },
-        redis: {
-          get: () => true,
-          set: () => true
-        },
-        userAgents: defaultUserAgents
-      };
-      discreet.init(options);
+      discreet.init(defaultOptions);
 
       it('should make a request to the provided url with a proxy and user agent', (done) => {
-        let endpoint = 'http://yahoo.com'
+        let endpoint = 'http://mytestendpoint.com';
         let throttlerStub = sinon.stub(discreet.throttler, 'queue').callsFake((options) => {
           return new Promise((resolve, reject) => {
-            let response = mockSuccessResponse;
+            let response = mockResponses.success;
             let err = null;
-            let body = mockSuccessResponse.body;
+            let body = mockResponses.success.body;
             resolve({err, response, body});
           });
         });
@@ -121,63 +115,176 @@ module.exports = function() {
         .then((response) => {
           assert(response);
           assert(throttlerStub.getCall(0).args[0].url === endpoint);
+          // Since the proxy pool is responsible for selecting and building the proxy url, the only job for
+          // the DiscreetRequest class is to add it to the request options
           assert(throttlerStub.getCall(0).args[0].proxy);
           assert(defaultUserAgents.includes(throttlerStub.getCall(0).args[0].headers['User-Agent']));
           assert(response.cached === false);
-          assert(response.body === mockSuccessResponse.body);
-          assert(response.raw === mockSuccessResponse);
-          done();
+          assert(response.body === mockResponses.success.body);
+          assert(response.raw === mockResponses.success);
           throttlerStub.restore();
+          done();
         })
         .catch((err) => {
-          console.log('error', err);
+          console.log(err);
+          assert(false);
+          throttlerStub.restore();
+          done();
         });
       });
 
       it('it should throw a ProxyError if you attempt to make a request before .init() is called on the instance', (done) => {
         let throttlerSpy = sinon.spy(discreet.throttler.queue);
-        // mock an incomplete init
+        // Mock an incomplete init
         discreet.initComplete = false;
         discreet.request('http://google.com', {method: 'GET'})
         .catch((err) => {
           assert(throttlerSpy.notCalled);
           assert(err instanceof error.ProxyError);
-          // clean up test
+          // Clean up test
           discreet.initComplete = true;
+          done();
+        })
+        .catch((err) => {
+          console.log(err);
+          assert(false);
           done();
         });
       });
 
-      it('should use a random user agent to make the request, if they are set', () => {
-        assert(true);
+      it('should throw a ProxyError if the authentication to the proxy is unsuccessful', (done) => {
+        let endpoint = 'http://mytestendpoint.com';
+        let throttlerStub = sinon.stub(discreet.throttler, 'queue').callsFake((options) => {
+          return new Promise((resolve, reject) => {
+            let response = mockResponses.proxyError;
+            let err = null;
+            let body = mockResponses.proxyError.body;
+            resolve({err, response, body});
+          });
+        });
+        discreet.request(endpoint).then(() => {
+          assert(false);
+          throttlerStub.restore();
+          done();
+        }).catch((err) => {
+          assert(err instanceof error.ProxyError);
+          throttlerStub.restore();
+          done();
+        });
       });
-      it('should use a proxy to make the request, if they are available', () => {
-        assert(true);
-      });
-      it('should throw a ProxyError if the authentication to the proxy is unsuccessful', () => {
-        assert(true);
-      });
-      it('should make a request, even if no options are provided', () => {
 
+      it('should throw a NetworkError if there is an error in the request', (done) => {
+        let endpoint = 'http://mytestendpoint.com';
+        let throttlerStub = sinon.stub(discreet.throttler, 'queue').callsFake((options) => {
+          return new Promise((resolve, reject) => {
+            let response = mockResponses.serverError;
+            let err = 'Error: Network Error';
+            let body = mockResponses.serverError.body;
+            resolve({err, response, body});
+          });
+        });
+        discreet.request(endpoint).then((response) => {
+          assert(false);
+          throttlerStub.restore();
+          done();
+        }).catch((err) => {
+          assert(err instanceof error.NetworkError);
+          throttlerStub.restore();
+          done();
+        });
       });
+
+
+      it('should make a request, even if no options are provided to either .init() or .request()', () => {
+        // Reset the instance
+        discreet.init();
+        let endpoint = 'http://mytestendpoint.com';
+        let throttlerStub = sinon.stub(discreet.throttler, 'queue').callsFake((options) => {
+          return new Promise((resolve, reject) => {
+            let response = mockResponses.success;
+            let err = null;
+            let body = mockResponses.success.body;
+            resolve({err, response, body});
+          });
+        });
+        discreet.request(endpoint).then((response) => {
+          assert(response);
+          assert(throttlerStub.getCall(0).args[0].proxy === undefined);
+          assert(defaultUserAgents.includes(throttlerStub.getCall(0).args[0].headers['User-Agent']));
+        });
+      });
+
     });
 
     describe('#cacheEndpoint', () => {
+
+      let discreet = new DiscreetRequest();
+      discreet.init(defaultOptions);
+
       it('should cache the endpoint response body using the endpoint as a key', () => {
-        assert(true);
+        let redisSetSpy = sinon.spy(discreet.redis, 'set');
+        let endpoint = 'http://mytestendpoint.com';
+        let data = 'data';
+        discreet.cacheEndpoint(endpoint, data);
+        assert(redisSetSpy.calledOnce);
+        assert(redisSetSpy.calledWith(endpoint, data, 'EX', discreet.cacheTTL));
       });
+
     });
 
-    describe('#loadEndpointFromCache', () => {
-      it('should load the endpoint data from the redis cache', () => {
-        assert(true);
+    describe('#loadEndpointCache', () => {
+
+      let discreet = new DiscreetRequest();
+      discreet.init(defaultOptions);
+
+      it('should load the endpoint data from the redis cache', (done) => {
+        let endpoint = 'http://mytestendpoint.com';
+        let data = 'data';
+        let redisGetStub = sinon.stub(discreet.redis, 'get').callsFake((endpoint, cb) => {
+          let err = null;
+          cb(err, data);
+        });
+        discreet.loadEndpointCache(endpoint)
+        .then((data) => {
+          assert(redisGetStub.calledOnce);
+          assert(redisGetStub.getCall(0).args[0] === endpoint);
+          assert(data === 'data');
+          done();
+        })
+        .catch((err) => {
+          console.log(err);
+          assert(false);
+          done();
+        });
       });
-      it('should return null if there is no cached data for the provided endpoint', ()=> {
-        assert(true);
+
+      it('should return null if there is no cached data for the provided endpoint', (done)=> {
+        let endpoint = 'http://mytestendpoint.com';
+        let data = null;
+        let redisGetStub = sinon.stub(discreet.redis, 'get').callsFake((endpoint, cb) => {
+          let err = null;
+          cb(err, null);
+        });
+        discreet.loadEndpointCache(endpoint)
+        .then((data) => {
+          assert(redisGetStub.calledOnce);
+          assert(redisGetStub.getCall(0).args[0] === endpoint);
+          assert(data === null);
+          done();
+        })
+        .catch((err) => {
+          console.log(err);
+          assert(false);
+          done();
+        });
       });
     });
 
     describe('#cachedRequest', () => {
+
+      let discreet = new DiscreetRequest();
+      discreet.init(defaultOptions);
+
       it('should attempt to load the endpoint data from cache, if available', () => {
         assert(true);
       });
