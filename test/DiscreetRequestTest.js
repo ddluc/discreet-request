@@ -211,6 +211,13 @@ module.exports = function() {
           assert(response);
           assert(throttlerStub.getCall(0).args[0].proxy === undefined);
           assert(defaultUserAgents.includes(throttlerStub.getCall(0).args[0].headers['User-Agent']));
+          throttlerStub.restore();
+        })
+        .catch((err) => {
+          console.log(err);
+          assert(false);
+          throttlerStub.restore();
+          done();
         });
       });
 
@@ -249,11 +256,13 @@ module.exports = function() {
           assert(redisGetStub.calledOnce);
           assert(redisGetStub.getCall(0).args[0] === endpoint);
           assert(data === 'data');
+          redisGetStub.restore();
           done();
         })
         .catch((err) => {
           console.log(err);
           assert(false);
+          redisGetStub.restore();
           done();
         });
       });
@@ -270,11 +279,13 @@ module.exports = function() {
           assert(redisGetStub.calledOnce);
           assert(redisGetStub.getCall(0).args[0] === endpoint);
           assert(data === null);
+          redisGetStub.restore();
           done();
         })
         .catch((err) => {
           console.log(err);
           assert(false);
+          redisGetStub.restore();
           done();
         });
       });
@@ -285,21 +296,84 @@ module.exports = function() {
       let discreet = new DiscreetRequest();
       discreet.init(defaultOptions);
 
-      it('should attempt to load the endpoint data from cache, if available', () => {
-        assert(true);
+      it('should attempt to load the endpoint data from cache, if available', (done) => {
+        let cachedData = 'cached-data';
+        let endpoint = 'http://mytestendpoint.com';
+        let loadEndpointCacheStub = sinon.stub(discreet, 'loadEndpointCache').callsFake((endpoint) => {
+          return new Promise((resolve, reject) => {
+            resolve(cachedData);
+          });
+        });
+        discreet.cachedRequest(endpoint)
+        .then((response) => {
+          assert(loadEndpointCacheStub.getCall(0).args[0] === endpoint);
+          assert(response.cached === true);
+          assert(response.body === cachedData);
+          assert(response.raw === null);
+          assert(response.statusCode === null);
+          loadEndpointCacheStub.restore();
+          done();
+        })
+        .catch((err) => {
+          console.log(err);
+          assert(false);
+          loadEndpointCacheStub.restore();
+          done();
+        });
       });
-      it('should execute a new request if the endpoint data is not available from cache', () => {
-        assert(true);
+
+      it('should execute a new request if the endpoint data is not available from cache and then cache the result', () => {
+
+        let endpoint = 'http://mytestendpoint.com';
+        let requestStub = sinon.stub(discreet, 'request').callsFake((options) => {
+          return new Promise((resolve, reject) => {
+            let response = mockResponses.success;
+            let err = null;
+            let body = mockResponses.success.body;
+            let cached = false;
+            let statusCode = mockResponses.success.statusCode;
+            resolve({err, response, body, statusCode, cached});
+          });
+        });
+        let loadEndpointCacheStub = sinon.stub(discreet, 'loadEndpointCache').callsFake((endpoint) => {
+          return new Promise((resolve, reject) => {
+            resolve(null);
+          });
+        });
+        let cacheEndpointSpy = sinon.spy(discreet, 'cacheEndpoint');
+        discreet.cachedRequest(endpoint)
+        .then((response) => {
+          assert(cacheEndpointSpy.calledOnce === true);
+          assert(cacheEndpointSpy.getCall(0).args[0] === endpoint);
+          assert(response.cached === false);
+          assert(response.body === mockResponses.success.body);
+          assert(response.statusCode === mockResponses.success.statusCode);
+          requestStub.restore();
+          loadEndpointCacheStub.restore();
+        })
+        .catch((err) => {
+          console.log(err);
+          assert(false);
+          requestStub.restore();
+          loadEndpointCacheStub.restore();
+        });
       });
-      it('should cache the response body, if a new request is made', () => {
-        assert(true);
-      });
-      it('should reject a RedisError if a redisClient was not provided', () => {
-        assert(true);
+
+      it('should reject a RedisError if a redisClient was not provided', (done) => {
+        let endpoint = 'http://mytestendpoint.com';
+        // nullify the redis instance
+        discreet.redis = null;
+        discreet.cachedRequest(endpoint)
+        .then((response) => {
+          assert(false);
+          done();
+        })
+        .catch((err) => {
+          assert(err instanceof error.RedisError);
+          done();
+        })
       });
     });
-
-
 
   });
 
