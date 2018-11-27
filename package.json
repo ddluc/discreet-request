@@ -1,6 +1,6 @@
 {
   "name": "discreet-request",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "An unobtrusive request library for web scrapers and APIs",
   "main": "index.js",
   "scripts": {
