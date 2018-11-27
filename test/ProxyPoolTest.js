@@ -92,21 +92,116 @@ module.exports = function() {
     });
 
     describe('#buildProxyUrl', () => {
-      it('should build a valid url', () => {
-        assert(true);
+      it('should build a valid url with protocol authentication', () => {
+        let proxy = `123.12.34.12:80`;
+        let options = { ...defaultOptions };
+        options.protocol = 'https';
+        let proxyPool = new ProxyPool(proxies, proxyAuth, options);
+        let proxyUrl = proxyPool.buildProxyUrl(proxy);
+        let expectedUrl = `${options.protocol}://${proxyAuth.username}:${proxyAuth.password}@${proxy}`;
+        assert(proxyUrl === expectedUrl);
       });
+
+      it('should build a valid url without authentication when none is provided', () => {
+        let proxy = `123.12.34.12:80`;
+        let proxyPool = new ProxyPool(proxies);
+        let proxyUrl = proxyPool.buildProxyUrl(proxy);
+        let expectedUrl = `http://${proxy}`;
+        assert(proxyUrl === expectedUrl);
+      });
+
+      it('should build a valid url without authentication when authenticaion is invalid', () => {
+        let proxy = `123.12.34.12:80`;
+        let auth = { username: null, password: 0};
+        let proxyPool = new ProxyPool(proxies, auth);
+        let proxyUrl = proxyPool.buildProxyUrl(proxy);
+        let expectedUrl = `http://${proxy}`;
+        assert(proxyUrl === expectedUrl);
+      });
+
     });
 
-    describe('#testProxies', () => {
+    describe('#runProxyTests', () => {
+
       it ('should test all of the proxies', () => {
-        assert(true);
-      })
+        let proxyPool = new ProxyPool(proxies, proxyAuth, defaultOptions);
+        let throttlerQueueStub = sinon.stub(proxyPool.throttler, 'queue').callsFake((options) => {
+          return new Promise((resolve, reject) => {
+            let response = mockResponses.success;
+            let err = null;
+            let body = mockResponses.success.body;
+            resolve({err, response, body});
+          });
+        });
+        proxyPool.runProxyTests();
+        assert(throttlerQueueStub.callCount === proxies.length);
+        proxies.forEach((proxy, index) => {
+          let call = throttlerQueueStub.getCall(index);
+          let proxyUrl = proxyPool.buildProxyUrl(proxy)
+          assert(call.args[0].proxy === proxyUrl);
+        });
+        throttlerQueueStub.restore();
+      });
+
+      it('should add healthy proxies to the pool', (done)=> {
+        let proxyPool = new ProxyPool(proxies, proxyAuth, defaultOptions);
+        let throttlerQueueStub = sinon.stub(proxyPool.throttler, 'queue').callsFake((options) => {
+          return new Promise((resolve, reject) => {
+            let response = mockResponses.success;
+            let err = null;
+            let body = mockResponses.success.body;
+            resolve({err, response, body});
+          });
+        });
+        proxyPool.runProxyTests();
+        setTimeout(() => {
+          assert(proxyPool.healthyProxies.length === proxies.length);
+          throttlerQueueStub.restore();
+          done();
+        }, 100);
+      });
+
+      it('should not add dead proxies to the pool', (done)=> {
+        let proxyPool = new ProxyPool(proxies, proxyAuth, defaultOptions);
+        let throttlerQueueStub = sinon.stub(proxyPool.throttler, 'queue').callsFake((options) => {
+          return new Promise((resolve, reject) => {
+            let response = mockResponses.forbidden;
+            let err = null;
+            let body = mockResponses.forbidden.body;
+            resolve({err, response, body});
+          });
+        });
+        proxyPool.runProxyTests();
+        setTimeout(() => {
+          assert(proxyPool.healthyProxies.length === 0);
+          throttlerQueueStub.restore();
+          done();
+        }, 100);
+      });
+
     });
 
-    describe('#getProxyUrl', () => {
+    describe('#getProxy', () => {
+
       it('should return the next available proxy in the pool', () => {
-        assert(true);
+        let proxyPool = new ProxyPool(proxies, proxyAuth, defaultOptions);
+        proxyPool.compose();
+        proxies.forEach((proxy, index) => {
+          assert(index === proxyPool.proxyIndex);
+          let proxy1 = proxyPool.getProxy();
+          let proxy2 = proxyPool.buildProxyUrl(proxy);
+          assert(proxy1 === proxy2);
+        });
       });
+
+      it('should return null if there are no proxies in the pool', () => {
+        let proxyPool = new ProxyPool(proxies, proxyAuth, defaultOptions);
+        proxyPool.compose();
+        proxyPool.healthyProxies = [];
+        let proxy = proxyPool.getProxy();
+        assert(proxy === null);
+      });
+
     });
 
   });
