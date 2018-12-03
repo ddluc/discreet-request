@@ -11,6 +11,8 @@ This module a wrapper around the popular node [request](https://github.com/reque
 
 Before scraping any data from a website, please refer and abide by the Terms of Service.
 
+> Hi there! Are you using this library? If so I'd love to hear your use case(s) and feedback. You can find my contact info on Github page.
+
 ## Usage
 
 ### `Discreet`
