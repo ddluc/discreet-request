@@ -2,6 +2,8 @@
 
 This module a wrapper around the popular node [request](https://github.com/request/request) library for creating discreet, un-intrusive http requests.  
 
+> Hi there! Are you using this library? If so I'd love to hear your use case(s) and feedback. If you have an issue or request, fill out an issue on the Github repo. Othewise feel free to reach out via email, which can be found on my Github page. Cheers! 
+
 ## Features:
 
 * Creates requests using rotating proxies and user agents
@@ -10,8 +12,6 @@ This module a wrapper around the popular node [request](https://github.com/reque
 * Implements a request cache to avoid making unnecessary requests to the requested resource
 
 Before scraping any data from a website, please refer and abide by the Terms of Service.
-
-> Hi there! Are you using this library? If so I'd love to hear your use case(s) and feedback. You can find my contact info on Github page.
 
 ## Usage
 
