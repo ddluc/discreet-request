@@ -1,13 +1,16 @@
 import request from "request";
-import { RequestOptions, Response } from "./types";
+import { RequestOptions, Response, InstanceProperties } from "./types";
+
+export type ThrottlerConfig = InstanceProperties<Throttler>;
 
 class Throttler {
 
-  private requests: number; 
+  requests: number; 
 
-  private milliseconds: number
+  milliseconds: number
 
-  constructor(requests = 1, milliseconds = 500) {
+  constructor(config: ThrottlerConfig = {}) {
+    const { requests = 1, milliseconds = 360000 } = config;
     this.requests = requests;
     this.milliseconds = milliseconds;
   }

@@ -2,6 +2,8 @@ import {
   CoreOptions, Response as CoreResponse
 } from "request";
 
+import { RedisClient } from "redis";
+
 
 /**
  * Utility Types
@@ -22,6 +24,26 @@ export type InstanceProperties<T> = {
  * Core Types
  */
 
+export type MainConfig = {
+  pool: {
+    proxies: Proxy[]; 
+    proxyAuth: Nullable<{ username: string, password: string }>;
+    targetEndpoint: string,
+    failureCases: string
+    protocol: RequestProtocol;
+    refreshProxies: boolean; 
+    refreshRate: number;
+    refreshInterval: Nullable<NodeJS.Timeout>;
+  }
+  thottle: {
+    requests: number
+    milliseconds: number
+  }
+  userAgents: string[]
+  redis: Nullable<RedisClient>
+  cacheTTL: number
+}
+
 export type RequestOptions = CoreOptions; 
 
 export type Response = {
@@ -35,5 +57,12 @@ export type Proxy = string;
 export type RequestProtocol = 'http' | 'https'; 
 
 export type StatusCode = number;
+
+export type DiscreetResponse = {
+  body: string
+  statusCode: number,
+  cached: boolean,
+  raw: CoreResponse
+}
 
 
