@@ -1,2 +1,5 @@
-const msg: string = '...Be discreet'; 
-console.log(msg);
+import ProxyPool from "./ProxyPool";
+
+const pool = new ProxyPool(); 
+
+pool.log();
