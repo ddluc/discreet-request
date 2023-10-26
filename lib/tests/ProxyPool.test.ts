@@ -1,4 +1,4 @@
-import ProxyPool from "../lib/ProxyPool";
+import ProxyPool from "../ProxyPool";
 
 describe('#ProxyPool', () => {
 

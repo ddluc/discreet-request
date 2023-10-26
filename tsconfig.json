@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",                          
     "module": "commonjs",                    
-    "lib": ["ESNext"],                     
+    "lib": ["ESNext"],   
     "allowJs": false,
     "outDir": "build",                          
     "rootDir": "lib",
@@ -12,5 +12,6 @@
     "noImplicitAny": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-  }
+  }, 
+  "exclude": ["lib/tests"]
 }
