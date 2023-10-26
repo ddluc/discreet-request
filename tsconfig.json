@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",                          
+    "module": "commonjs",                    
+    "lib": ["ESNext"],                     
+    "allowJs": false,
+    "outDir": "build",                          
+    "rootDir": "lib",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,         
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+  }
+}

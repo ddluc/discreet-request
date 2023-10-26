@@ -4,8 +4,12 @@
   "description": "An unobtrusive request library for web scrapers and APIs",
   "main": "index.js",
   "scripts": {
-    "test": "export NODE_ENV=test; mocha --exit; export NODE_ENV=development;",
-    "test-debug": "export NODE_ENV=test; mocha debug --exit; export NODE_ENV=development;"
+    "start": "npx ts-node ./lib/index.ts",
+    "test:run": "jest",
+    "test:coverage": "jest --coverage",
+    "tsc:build": "tsc",
+    "tsc:check": "tsc --noEmit",
+    "tsc:version": "tsc --version"
   },
   "repository": {
     "type": "git",
@@ -27,8 +31,7 @@
     "throttled-request": "^0.1.1"
   },
   "devDependencies": {
-    "mocha": "^5.2.0",
-    "redis": "^2.8.0",
-    "sinon": "^7.1.1"
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }
