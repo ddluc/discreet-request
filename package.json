@@ -6,6 +6,7 @@
   "scripts": {
     "start": "npx ts-node ./lib/index.ts",
     "test:run": "jest",
+    "test:debug": "jest --verbose --detectOpenHandles",
     "test:coverage": "jest --coverage",
     "tsc:build": "tsc",
     "tsc:check": "tsc --noEmit",
@@ -26,8 +27,9 @@
   "author": "Daniel Lucas",
   "license": "ISC",
   "dependencies": {
+    "@types/request": "^2.48.11",
     "colors": "^1.4.0",
-    "node-fetch": "^3.3.2"
+    "request": "^2.88.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.6",
