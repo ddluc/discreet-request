@@ -36,7 +36,7 @@ export type MainConfig = {
     refreshInterval?: number
   }
   throttle?: {
-    requests?: number
+    count?: number
     milliseconds?: number
   }
   userAgents?: string[]
@@ -48,6 +48,7 @@ export type MainConfig = {
 export type RequestOptions = CoreOptions; 
 
 export type Response = {
+  id?: string,
   err: any, 
   response: CoreResponse, 
   body: string

@@ -35,7 +35,7 @@ describe('DiscreeetRequest', () => {
       protocol: 'http'
     }, 
     throttle: {
-      requests: 3, 
+      count: 3, 
       milliseconds: 10000
     },
     redis: mockRedisClient,
@@ -85,7 +85,7 @@ describe('DiscreeetRequest', () => {
       expect(discreet.proxyPool.proxyAuth).toEqual(null);
       // Verify Throttler Config
       expect(discreet.throttler).toBeInstanceOf(Throttler);
-      expect(discreet.throttler.requests).toEqual(1);
+      expect(discreet.throttler.count).toEqual(1);
       expect(discreet.throttler.milliseconds).toEqual(360000);
       // Verify Redis config 
       expect(discreet.redis).toEqual(null); 
@@ -99,7 +99,7 @@ describe('DiscreeetRequest', () => {
       expect(discreet.proxyPool.proxyAuth).toEqual(defaultConfig.pool?.proxyAuth);
       // Verify Throttler Config
       expect(discreet.throttler).toBeInstanceOf(Throttler);
-      expect(discreet.throttler.requests).toEqual(defaultConfig?.throttle?.requests);
+      expect(discreet.throttler.count).toEqual(defaultConfig?.throttle?.count);
       expect(discreet.throttler.milliseconds).toEqual(defaultConfig?.throttle?.milliseconds);
       // Verify Redis config 
       expect(discreet.redis).toEqual(defaultConfig.redis); 
