@@ -1,11 +1,11 @@
-import { RedisClient } from "redis";
+
 
 import ProxyPool from "./ProxyPool";
 import Throttler from "./Throttler";
 import DEAFULT_USER_AGENTS from '../util/userAgents';
 import { NetworkError, RequestError, ProxyError, RedisError } from "../util/error";
 
-import type { Nullable, MainConfig, RequestOptions, DiscreetResponse } from "../types";
+import type { RedisClient, Nullable, MainConfig, RequestOptions, DiscreetResponse } from "../types";
 
 
 class DiscreetRequest {

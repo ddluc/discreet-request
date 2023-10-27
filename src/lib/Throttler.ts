@@ -56,7 +56,6 @@ class Throttler {
     return new Promise((resolve, reject) => {
       const request = { url, options, id: v4() }
       this.emitter.on(`request-${request.id}`, (response) => {
-        console.log('Resolving request', request.url);
         resolve({ ...response, id: request.id});
         this.emitter.removeAllListeners(`request-${request.id}`)
       });
