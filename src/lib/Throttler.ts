@@ -1,5 +1,5 @@
 import request from "request";
-import { RequestOptions, Response, InstanceProperties } from "./types";
+import { RequestOptions, Response, InstanceProperties } from "../types";
 
 export type ThrottlerConfig = InstanceProperties<Throttler>;
 

@@ -6,7 +6,7 @@ import {
   Proxy, 
   RequestProtocol, 
   StatusCode
-} from "./types";
+} from "../types";
 
 
 

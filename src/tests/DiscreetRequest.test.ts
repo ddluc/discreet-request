@@ -1,6 +1,6 @@
-import DiscreetRequest from "../DiscreetRequest";
-import ProxyPool from "../ProxyPool";
-import Throttler from "../Throttler";
+import DiscreetRequest from "../lib/DiscreetRequest";
+import ProxyPool from "../lib/ProxyPool";
+import Throttler from "../lib/Throttler";
 import { MainConfig } from "../types";
 import DEFAULT_USER_AGENTS from '../util/userAgents';
 import mockRedisClient from './__mocks/redis';

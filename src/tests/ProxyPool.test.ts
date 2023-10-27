@@ -1,6 +1,6 @@
 import { Response } from "../types";
-import ProxyPool from "../ProxyPool";
-import { ProxyPoolConfig } from "../ProxyPool";
+import ProxyPool from "../lib/ProxyPool";
+import { ProxyPoolConfig } from "../lib/ProxyPool";
 
 // Mock HTTP responses: 
 import mockResponses from "./__mocks/responses";
