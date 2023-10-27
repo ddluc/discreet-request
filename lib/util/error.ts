@@ -11,6 +11,13 @@
    }
  }
 
+ export class RequestError extends ErrorBase {
+  constructor(m: string) {
+    super(m);
+    this.name = this.constructor.name;
+  }
+ }
+
 export class NetworkError extends ErrorBase {
  constructor(m: string) {
    super(m);

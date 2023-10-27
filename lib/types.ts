@@ -25,23 +25,24 @@ export type InstanceProperties<T> = {
  */
 
 export type MainConfig = {
-  pool: {
-    proxies: Proxy[]; 
-    proxyAuth: Nullable<{ username: string, password: string }>;
-    targetEndpoint: string,
-    failureCases: string
-    protocol: RequestProtocol;
-    refreshProxies: boolean; 
-    refreshRate: number;
-    refreshInterval: Nullable<NodeJS.Timeout>;
+  pool?: {
+    proxies?: Proxy[]; 
+    proxyAuth?: Nullable<{ username: string, password: string }>;
+    targetEndpoint?: string,
+    failureCases?: number[]
+    protocol?: RequestProtocol;
+    refreshProxies?: boolean; 
+    refreshRate?: number;
+    refreshInterval?: number
   }
-  thottle: {
-    requests: number
-    milliseconds: number
+  throttle?: {
+    requests?: number
+    milliseconds?: number
   }
-  userAgents: string[]
-  redis: Nullable<RedisClient>
-  cacheTTL: number
+  userAgents?: string[]
+  redis?: Nullable<RedisClient>
+  cache?: boolean
+  cacheTTL?: number
 }
 
 export type RequestOptions = CoreOptions; 
@@ -60,9 +61,9 @@ export type StatusCode = number;
 
 export type DiscreetResponse = {
   body: string
-  statusCode: number,
+  statusCode: Nullable<number>,
   cached: boolean,
-  raw: CoreResponse
+  raw: Nullable<CoreResponse>
 }
 
 

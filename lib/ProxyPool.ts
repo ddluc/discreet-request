@@ -75,8 +75,7 @@ class ProxyPool {
    * @description gets a full proxy url
    * @returns {(string | null)} fullProxyUrl - the full proxy url with protocol
    */
-  buildProxyUrl(proxy: Nullable<Proxy>): Nullable<string> {
-    if (!proxy) return null; 
+  buildProxyUrl(proxy: Proxy): string {
     if (this.proxyAuth) {
       return `${this.protocol}://${this.proxyAuth.username}:${this.proxyAuth.password}@${proxy}`;
     } else { 
