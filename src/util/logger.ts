@@ -13,7 +13,7 @@ const logger = {
    */
   'info': function(msg='') {
     if (process.env.NODE_ENV !== 'test') {
-      console.log(colors.cyan(msg));
+      console.log(colors.cyan(`[DISCREET] ${msg}`));
     }
   },
 
@@ -24,7 +24,7 @@ const logger = {
    */
   'warn': function(msg='') {
     if (process.env.NODE_ENV !== 'test') {
-      console.log(colors.yellow(msg));
+      console.log(colors.yellow(`[DISCREET] ${msg}`));
     }
   },
 
@@ -34,7 +34,7 @@ const logger = {
    * @param {string} msg - the message to log
    */
   'error': function(msg='') {
-    console.log(colors.red.bold(msg));
+    console.log(colors.red.bold(`[DISCREET] ${msg}`));
   },
 
   /**
@@ -44,7 +44,7 @@ const logger = {
    */
   'dev': function(msg='') {
     if (process.env.NODE_ENV == 'development') {
-      console.log(colors.green(msg));
+      console.log(colors.green(`[DISCREET] ${msg}`));
     }
   }
 

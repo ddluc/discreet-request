@@ -4,6 +4,7 @@ import ProxyPool from "./ProxyPool";
 import Throttler from "./Throttler";
 import DEAFULT_USER_AGENTS from '../util/userAgents';
 import { NetworkError, RequestError, ProxyError, RedisError } from "../util/error";
+import logger from "../util/logger";
 
 import type { RedisClient, Nullable, MainConfig, RequestOptions, DiscreetResponse } from "../types";
 
@@ -67,7 +68,7 @@ class DiscreetRequest {
     this.cache = (cache && !!redis); 
     this.cacheTTL = cacheTTL,
     this.initComplete = true;
-    console.info('Discreet requests are enabled');
+    logger.info('Discreet requests are enabled');
   }
 
   /**
@@ -100,34 +101,27 @@ class DiscreetRequest {
    *              Since we don't immediately need this can be safely be done async.
    */
   async setEndpointCache(endpoint: string, data: any): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // check to make sure that redis is configured
-      if (this.redis) {
-        console.info(`Caching Endpoint: ${endpoint}`);
-        this.redis.set(endpoint, data.toString(), 'EX', this.cacheTTL, () => {
-          resolve();
-        });
-      } else {
-        reject(new RedisError('No redis instance is configred, cannot cache request')); 
-      }
-    }); 
+    logger.info(`Setting endpoint data to cache: ${endpoint}`);
+    // check to make sure that redis is configured
+    if (this.redis) {
+      logger.info(`Caching Endpoint: ${endpoint}`);
+      await this.redis.set(endpoint, data.toString(), 'EX', this.cacheTTL);
+    } else {
+      throw new RedisError('No redis instance is configred, cannot cache request'); 
+    }
   }
 
   /**
    * @description loads the cached endpoint data
    */
   async loadEndpointCache(endpoint: string): Promise<Nullable<string>> {
-    return new Promise((resolve, reject) => {
-      if (!this.redis) resolve(null);
-      else {
-        this.redis.get(endpoint, (err: Nullable<Error>, data: string) => {
-          if (err) reject(err);
-          if (data === null) resolve(null);
-          console.info(`Loading endpoint from cache: ${endpoint}`);
-          resolve(data);
-        });
-      }
-    });
+    if (!this.redis) return null;
+    else {
+      const data = await this.redis.get(endpoint);
+      logger.info(`[CACHE]: Loading endpoint from cache: ${endpoint}: ${data}`);
+      if (data === null) return null;
+      return data;
+    }
   }
 
   buildOptions () {
@@ -139,7 +133,6 @@ class DiscreetRequest {
     }
     if (proxyUrl !== null) {
       options.proxy = proxyUrl;
-      console.info(`Creating discreet request with proxy address ${proxyUrl}`);
     }
     return options; 
   }
@@ -151,7 +144,7 @@ class DiscreetRequest {
    */
   async request(url: string, requestOptions: RequestOptions = {}, fromCache = this.cache) {
     if (!this.initComplete) {
-      console.warn('You must first init the discreet instance before making a request calling discreet.init(...)');
+      logger.warn('You must first init the discreet instance before making a request calling discreet.init(...)');
       throw new RequestError('Discreet was not initialized');
     }
     // Fetch the endpoint cache 
@@ -162,11 +155,12 @@ class DiscreetRequest {
     // Build the request options
     const options = {...requestOptions, ...this.buildOptions()}; 
     // Generate the throttled request 
+    logger.info(`Generating discreet request to ${url} with ${options.proxy}`);
     const result = await this.throttler.queue(url, options);
     const { err, response, body } = result;
     // Handle the request errors
     if (err) {
-      console.error(err);
+      logger.error(err);
       throw new NetworkError(`Could not complete request to ${url}`);
     } else if (response && response.statusCode === 407) {
       throw new ProxyError('Could not authenticate with the proxy');

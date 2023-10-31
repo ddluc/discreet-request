@@ -20,7 +20,7 @@ class Throttler {
   interval: Nullable<NodeJS.Timeout>;
 
   constructor(config: ThrottlerConfig = {}) {
-    const { count = 1, milliseconds = 360000 } = config;
+    const { count = 1, milliseconds = 1000 } = config;
     this.emitter = new EventEmitter(); 
     this.requests = [];
     this.count = count;

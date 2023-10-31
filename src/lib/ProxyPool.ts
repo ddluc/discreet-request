@@ -1,4 +1,5 @@
 import Throttler from "./Throttler";
+import logger from "../util/logger";
 
 import { 
   InstanceProperties, 
@@ -44,7 +45,7 @@ class ProxyPool {
       targetEndpoint = 'http://bing.com',
       failureCases = [407, 403, 408],
       refreshProxies = false,
-      refreshRate = 3600000,
+      refreshRate = 300000,
       protocol = 'http'
     } = config;
     // The request throttler
@@ -118,6 +119,7 @@ class ProxyPool {
    */
   async test(): Promise<void> {
     this.pool = []; 
+    logger.info(`Testing proxies`);
     for (const proxy of this.proxies) {
       const proxyUrl = this.buildProxyUrl(proxy);
       const requestOptions = { 
@@ -127,14 +129,14 @@ class ProxyPool {
       const result = await this.throttler.queue(this.targetEndpoint, requestOptions);
       const {err, response } = result;
       if (err) {
-        console.error(err);
+        logger.error(err);
       } else if (response) {
         const { statusCode, statusMessage } = response; 
         if (this.failureCases.includes(statusCode)) {
-          console.warn(`Proxy ${proxy} failed health test with status code ${statusCode} ${statusMessage} `)
+          logger.warn(`Proxy ${proxy} failed health test with status code ${statusCode} ${statusMessage} `)
         } else {
           this.pool.push(proxy);
-          console.info(`Proxy ${proxy} passed health test with status code ${statusCode} ${statusMessage}`);
+          logger.info(`Proxy ${proxy} passed health test with status code ${statusCode} ${statusMessage}`);
         }
       }
     }

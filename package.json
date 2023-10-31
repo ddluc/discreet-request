@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npx ts-node ./src/index.ts",
+    "build": "./scripts/build.sh",
     "test:run": "jest --verbose --silent",
     "test:debug": "jest --verbose --detectOpenHandles",
     "test:coverage": "jest --coverage",
