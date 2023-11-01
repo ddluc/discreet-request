@@ -124,18 +124,6 @@ class DiscreetRequest {
     }
   }
 
-  buildOptions () {
-    const options: RequestOptions = {}; 
-    let userAgent = this.getRandomUserAgent();
-    let proxyUrl = this.proxyPool.getProxy();
-    if (userAgent !== null) {
-      options.headers = { 'User-Agent': userAgent };
-    }
-    if (proxyUrl !== null) {
-      options.proxy = proxyUrl;
-    }
-    return options; 
-  }
 
   /**
    * @description generates the discreet request without cache
@@ -153,7 +141,12 @@ class DiscreetRequest {
       if (data) return this.sendResponse({ body: data, cached: true });
     }
     // Build the request options
-    const options = {...requestOptions, ...this.buildOptions()}; 
+    const options: RequestOptions = {
+      proxy: this.proxyPool.getProxy(),
+      headers: { 'User-Agent': this.getRandomUserAgent(), ...requestOptions.headers },
+      ...requestOptions
+    }; 
+    if (!options.proxy) throw new ProxyError('No proxies available');
     // Generate the throttled request 
     logger.info(`Generating discreet request to ${url} with ${options.proxy}`);
     const result = await this.throttler.queue(url, options);

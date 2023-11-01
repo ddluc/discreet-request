@@ -202,11 +202,11 @@ describe('DiscreeetRequest', () => {
 
     it('should throw a NetworkError if there is an error in the request', async () => {
       discreet = new DiscreetRequest();
-      await discreet.init(); 
+      await discreet.init(defaultConfig); 
       const throttler = mockThrottler(discreet, 'serverError');
       try {
         let endpoint = 'http://mytestendpoint.com';
-        const options = { method: 'PUT'};
+        const options = { method: 'PUT' };
         const response = await discreet.request(endpoint, options, true);
       } catch(err) {
         if (err instanceof Error) expect(err?.name).toEqual('NetworkError');
@@ -216,14 +216,20 @@ describe('DiscreeetRequest', () => {
       }
     });
 
-    it('should make a request, even if no options are provided to either .init() or .request()', async () => {
+    it('should throw a proxy error if there are no available proxies', async () => {
       discreet = new DiscreetRequest();
       await discreet.init(); 
       const throttler = mockThrottler(discreet, 'success');
-      let endpoint = 'http://mytestendpoint.com';
-      const options = { method: 'PUT'};
-      await discreet.request(endpoint, options);
-      expect(throttler).toHaveBeenCalled(); 
+      try {
+        let endpoint = 'http://mytestendpoint.com';
+        const options = { method: 'PUT'};
+        await discreet.request(endpoint, options);
+      } catch(err) {
+        if (err instanceof Error) expect(err?.name).toEqual('ProxyError');
+        else {
+          fail('it should throw a request error');
+        }
+      }
     });
 
     it('should cache the request if the cache is enabled', async () => {

@@ -2,6 +2,7 @@ import { v4 } from 'uuid';
 import request from "request";
 import { RequestOptions, Response, InstanceProperties, Nullable } from "../types";
 import EventEmitter from "events";
+import logger from '../util/logger';
 
 type Request = {id: string, url: string, options: RequestOptions};
 
