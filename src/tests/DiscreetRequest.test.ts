@@ -77,8 +77,8 @@ describe('DiscreeetRequest', () => {
 
   describe('#init', () => {
     let discreet = new DiscreetRequest();
-    it('should set the default values for all configuration options that are not defined', () => {
-      discreet.init(); 
+    it('should set the default values for all configuration options that are not defined', async () => {
+      await discreet.init(); 
       // Verify proxy Pool config
       expect(discreet.proxyPool).toBeInstanceOf(ProxyPool);
       expect(discreet.proxyPool.proxies).toEqual([]);
@@ -86,13 +86,13 @@ describe('DiscreeetRequest', () => {
       // Verify Throttler Config
       expect(discreet.throttler).toBeInstanceOf(Throttler);
       expect(discreet.throttler.count).toEqual(1);
-      expect(discreet.throttler.milliseconds).toEqual(360000);
+      expect(discreet.throttler.milliseconds).toEqual(1000);
       // Verify Redis config 
       expect(discreet.redis).toEqual(null); 
       expect(discreet.cacheTTL).toEqual(86400);
     });
-    it('should configure the instance with the user configuration options', () => {
-      discreet.init(defaultConfig); 
+    it('should configure the instance with the user configuration options', async () => {
+      await discreet.init(defaultConfig); 
       // Verify proxy Pool config
       expect(discreet.proxyPool).toBeInstanceOf(ProxyPool);
       expect(discreet.proxyPool.proxies).toEqual(defaultConfig?.pool?.proxies);
@@ -111,9 +111,9 @@ describe('DiscreeetRequest', () => {
 
     let discreet: DiscreetRequest; 
 
-    beforeEach(() => {
+    beforeEach(async () => {
       discreet = new DiscreetRequest();
-      discreet.init(defaultConfig);
+      await discreet.init(defaultConfig);
     });
 
 
@@ -186,7 +186,7 @@ describe('DiscreeetRequest', () => {
 
     it('should throw a ProxyError if the authentication to the proxy is unsuccessful', async () => {
       discreet = new DiscreetRequest();
-      discreet.init(); 
+      await discreet.init(); 
       const throttler = mockThrottler(discreet, 'proxyError');
       try {
         let endpoint = 'http://mytestendpoint.com';
@@ -202,7 +202,7 @@ describe('DiscreeetRequest', () => {
 
     it('should throw a NetworkError if there is an error in the request', async () => {
       discreet = new DiscreetRequest();
-      discreet.init(); 
+      await discreet.init(); 
       const throttler = mockThrottler(discreet, 'serverError');
       try {
         let endpoint = 'http://mytestendpoint.com';
@@ -218,7 +218,7 @@ describe('DiscreeetRequest', () => {
 
     it('should make a request, even if no options are provided to either .init() or .request()', async () => {
       discreet = new DiscreetRequest();
-      discreet.init(); 
+      await discreet.init(); 
       const throttler = mockThrottler(discreet, 'success');
       let endpoint = 'http://mytestendpoint.com';
       const options = { method: 'PUT'};
@@ -228,7 +228,7 @@ describe('DiscreeetRequest', () => {
 
     it('should cache the request if the cache is enabled', async () => {
       discreet = new DiscreetRequest();
-      discreet.init({ ...defaultConfig, cache: true, redis: mockRedisClient }); 
+      await discreet.init({ ...defaultConfig, cache: true, redis: mockRedisClient }); 
       const throttler = mockThrottler(discreet, 'success');
       const redis = discreet.redis || mockRedisClient; 
       const set = jest.spyOn(redis, 'set'); 

@@ -48,7 +48,7 @@ class DiscreetRequest {
     this.proxyPool = new ProxyPool(); 
   }
 
-  init(config: MainConfig = {}) {
+  async init(config: MainConfig = {}) {
     const {
       pool = {},
       throttle = {},
@@ -59,7 +59,6 @@ class DiscreetRequest {
     } = config;
     // Setup the proxy pool
     this.proxyPool = new ProxyPool(pool); 
-    this.proxyPool.compose(); 
     // Setup the throttler 
     this.throttler = new Throttler(throttle);
     // Configure the main module 
@@ -67,6 +66,7 @@ class DiscreetRequest {
     this.redis = redis;
     this.cache = (cache && !!redis); 
     this.cacheTTL = cacheTTL,
+    await this.proxyPool.compose(); 
     this.initComplete = true;
     logger.info('Discreet requests are enabled');
   }

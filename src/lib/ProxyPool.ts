@@ -43,7 +43,7 @@ class ProxyPool {
       proxies = [],
       proxyAuth = null,
       targetEndpoint = 'http://bing.com',
-      failureCases = [407, 403, 408],
+      failureCases = [407, 403, 408, 401, 418],
       refreshProxies = false,
       refreshRate = 300000,
       protocol = 'http'
@@ -97,9 +97,11 @@ class ProxyPool {
         this.index = 0; 
         this.test();
       }, this.refreshRate);
+      return;
     } else { 
       // If we aren't refreshing proxies, assume they are all healthy
       this.pool = this.proxies;
+      return;
     }
   };
 
