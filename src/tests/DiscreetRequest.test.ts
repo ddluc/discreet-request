@@ -1,5 +1,4 @@
 import DiscreetRequest from "../lib/DiscreetRequest";
-import ProxyPool from "../lib/ProxyPool";
 import Throttler from "../lib/Throttler";
 import { MainConfig } from "../types";
 import DEFAULT_USER_AGENTS from '../util/userAgents';
@@ -15,25 +14,19 @@ const fail = (message: string) => {
 describe('DiscreeetRequest', () => {
 
   const defaultConfig: MainConfig = {
-    pool: {
-      proxies: [
-        '192.168.1.100',
-        '10.0.0.1',
-        '172.16.0.100',
-        '203.0.113.5',
-        '87.65.43.21'
-      ],
-      targetEndpoint: 'http://mytestendpoint.com',
-      proxyAuth: {
-        username: 'username',
-        password: 'pass'
-      },
-      failureCases: [407, 403],
-      refreshInterval: 36000,
-      refreshProxies: false,
-      refreshRate: 3600000,
-      protocol: 'http'
-    }, 
+    proxies: [
+      '192.168.1.100',
+      '10.0.0.1',
+      '172.16.0.100',
+      '203.0.113.5',
+      '87.65.43.21'
+    ],
+    proxyAuth: {
+      username: 'username',
+      password: 'pass'
+    },
+    failureCases: [407, 403],
+    protocol: 'http',
     throttle: {
       count: 3, 
       milliseconds: 10000
@@ -43,7 +36,6 @@ describe('DiscreeetRequest', () => {
     cacheTTL: 60000,
     userAgents: DEFAULT_USER_AGENTS
   }
-
 
   /**
    * Utility function to mock the throttler queue (i.e. network request)
@@ -72,17 +64,27 @@ describe('DiscreeetRequest', () => {
     it ('should instantiate a new Discreet Request class', () => {
       let discreet = new DiscreetRequest(); 
       expect(discreet).toBeInstanceOf(DiscreetRequest);
+      discreet.throttler.stop(); 
     });
   });
 
   describe('#init', () => {
-    let discreet = new DiscreetRequest();
+    
+    let discreet: DiscreetRequest; 
+
+    beforeEach(() => {
+      discreet = new DiscreetRequest();
+    }); 
+
+    afterEach(() => {
+      discreet.throttler.stop(); 
+    });
+
     it('should set the default values for all configuration options that are not defined', async () => {
       await discreet.init(); 
       // Verify proxy Pool config
-      expect(discreet.proxyPool).toBeInstanceOf(ProxyPool);
-      expect(discreet.proxyPool.proxies).toEqual([]);
-      expect(discreet.proxyPool.proxyAuth).toEqual(null);
+      expect(discreet.proxies).toEqual([]);
+      expect(discreet.proxyAuth).toEqual(null);
       // Verify Throttler Config
       expect(discreet.throttler).toBeInstanceOf(Throttler);
       expect(discreet.throttler.count).toEqual(1);
@@ -94,9 +96,8 @@ describe('DiscreeetRequest', () => {
     it('should configure the instance with the user configuration options', async () => {
       await discreet.init(defaultConfig); 
       // Verify proxy Pool config
-      expect(discreet.proxyPool).toBeInstanceOf(ProxyPool);
-      expect(discreet.proxyPool.proxies).toEqual(defaultConfig?.pool?.proxies);
-      expect(discreet.proxyPool.proxyAuth).toEqual(defaultConfig.pool?.proxyAuth);
+      expect(discreet.proxies).toEqual(defaultConfig?.proxies);
+      expect(discreet.proxyAuth).toEqual(defaultConfig?.proxyAuth);
       // Verify Throttler Config
       expect(discreet.throttler).toBeInstanceOf(Throttler);
       expect(discreet.throttler.count).toEqual(defaultConfig?.throttle?.count);
@@ -107,15 +108,111 @@ describe('DiscreeetRequest', () => {
     }); 
   }); 
 
+  describe('#sendResponse', () => {
+    it.todo('should send the formatted response'); 
+  }); 
+
+  describe('#isProxOperable', () => {
+    it.todo('should determine whether the proxy is operable');
+  }); 
+
+  describe('#removeProxy', () => {
+    it.todo('should remove the provided proxy'); 
+    it.todo('should not remove the provided proxy if it does not exist');
+  }); 
+
+  describe('#getRandomUserAgent', () => {
+    it.todo('should get a random user agent');
+  }); 
+
+  describe('#buildProxyUrl', () => {
+
+    let discreet: DiscreetRequest; 
+
+    beforeEach(() => {
+      discreet = new DiscreetRequest();
+    }); 
+
+    afterEach(() => {
+      discreet.throttler.stop(); 
+    }); 
+    
+    it('should build a valid URL with protocol authentication', () => {
+      const config = { ...defaultConfig };
+      const proxy = '123.12.34.12:80';
+      discreet.init(config);
+      const proxyUrl = discreet.buildProxyUrl(proxy);
+      const expectedUrl = `${config.protocol}://${config?.proxyAuth?.username}:${config?.proxyAuth?.password}@${proxy}`;
+      expect(proxyUrl).toBe(expectedUrl);
+    });
+  
+    it('should build a valid URL without authentication when none is provided', () => {
+      const config = { ...defaultConfig, proxyAuth: null };
+      const proxy = '123.12.34.12:80';
+      discreet.init(config);
+      const proxyUrl = discreet.buildProxyUrl(proxy);
+      const expectedUrl = `http://${proxy}`;
+      expect(proxyUrl).toBe(expectedUrl);
+    });
+  
+  }); 
+
+  describe('#getProxy', () => {
+
+    let discreet: DiscreetRequest; 
+    const config = {...defaultConfig, proxyAuth: null };
+    const proxies = defaultConfig.proxies || [];
+
+    beforeEach(() => {
+      discreet = new DiscreetRequest();
+      discreet.init(config);
+    }); 
+
+    afterEach(() => {
+      discreet.throttler.stop(); 
+    }); 
+
+    it('should return the next available proxy in the pool', () => {
+      proxies.forEach((p, i) => {
+        const { proxy, url: proxyUrl} = discreet.getProxy(); 
+        expect(proxy).toEqual(p);
+        expect(proxyUrl).toEqual(`${config.protocol}://${proxies[i]}`);
+      })
+    }); 
+
+    it('should return null if there are no proxies in the pool', () => {
+      discreet.pool = []; 
+      const { proxy, url: proxyUrl} = discreet.getProxy(); 
+      expect(proxy).toBeNull();
+      expect(proxyUrl).toBeNull();
+    });
+  });
+
+  describe('#setEndpointCache', () => {
+    it.todo('should set the endpoint response to cache'); 
+  }); 
+
+  describe('#getEndpointCache', () => {
+    it.todo('should get the endpoint response from cache'); 
+  }); 
+
+  describe('#compose', () => {
+    it.todo('should compose the pool of healthy proxies'); 
+    it.todo('should not add inoperable proxies to the pool'); 
+  }); 
+
   describe('#request', () => {
 
     let discreet: DiscreetRequest; 
 
     beforeEach(async () => {
       discreet = new DiscreetRequest();
-      await discreet.init(defaultConfig);
+      discreet.init(defaultConfig);
     });
 
+    afterEach( async () => {
+      discreet.throttler.stop(); 
+    }); 
 
     it('should make a request to the provided url with a proxy and user agent', async () => {
       const throttler = mockThrottler(discreet, 'success');
@@ -154,7 +251,7 @@ describe('DiscreeetRequest', () => {
       await discreet.request(endpoint, options);
       // Verify the configured proxy
       const { proxy } = throttler.mock.calls[0][1];
-      const proxyUrl = `http://${defaultConfig?.pool?.proxyAuth?.username}:${defaultConfig?.pool?.proxyAuth?.password}@${discreet.proxyPool.proxies?.shift()}`;
+      const proxyUrl = `http://${defaultConfig?.proxyAuth?.username}:${defaultConfig?.proxyAuth?.password}@${discreet.proxies?.shift()}`;
       expect(proxy).toEqual(proxyUrl); 
     }); 
 
@@ -245,6 +342,5 @@ describe('DiscreeetRequest', () => {
     });
 
   });
-
 
 });

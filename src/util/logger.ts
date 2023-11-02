@@ -1,6 +1,6 @@
 var colors = require('colors/safe');
 
-const debug = false;
+const debug = true;
 
 const logger = {
 

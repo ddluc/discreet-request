@@ -2,6 +2,7 @@ import {
   CoreOptions, Response as CoreResponse
 } from "request";
 
+
 /**
  * Redis Client
  */
@@ -32,16 +33,11 @@ export type InstanceProperties<T> = {
  */
 
 export type MainConfig = {
-  pool?: {
-    proxies?: Proxy[]; 
-    proxyAuth?: Nullable<{ username: string, password: string }>;
-    targetEndpoint?: string,
-    failureCases?: number[]
-    protocol?: RequestProtocol;
-    refreshProxies?: boolean; 
-    refreshRate?: number;
-    refreshInterval?: number
-  }
+  proxies?: Proxy[]; 
+  proxyAuth?: Nullable<{ username: string, password: string }>
+  failureCases?: number[]
+  maxRetries?: number
+  protocol?: RequestProtocol
   throttle?: {
     count?: number
     milliseconds?: number
