@@ -148,14 +148,14 @@ class DiscreetRequest {
     }; 
     if (!options.proxy) throw new ProxyError('No proxies available');
     // Generate the throttled request 
-    logger.info(`Generating discreet request to ${url} with ${options.proxy}`);
+    logger.dev(`Generating discreet request to ${url} with ${options.proxy}`);
     const result = await this.throttler.queue(url, options);
     const { err, response, body } = result;
     // Handle the request errors
     if (err) {
       logger.error(err);
       throw new NetworkError(`Could not complete request to ${url}`);
-    } else if (response && response.statusCode === 407) {
+    } else if (response && this.proxyPool.failureCases.includes(response.statusCode)) {
       throw new ProxyError('Could not authenticate with the proxy');
     }
     // Cache the response, if enabled

@@ -68,7 +68,7 @@ export type RequestProtocol = 'http' | 'https';
 export type StatusCode = number;
 
 export type DiscreetResponse = {
-  body: string
+  body: any,
   statusCode: Nullable<number>,
   cached: boolean,
   raw: Nullable<CoreResponse>

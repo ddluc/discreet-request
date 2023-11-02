@@ -1,6 +1,6 @@
 var colors = require('colors/safe');
 
-const debug = true;
+const debug = false;
 
 const logger = {
 
@@ -43,7 +43,7 @@ const logger = {
    * @param {string} msg - the message to log
    */
   'dev': function(msg='') {
-    if (process.env.NODE_ENV == 'development') {
+    if (debug) {
       console.log(colors.green(`[DISCREET] ${msg}`));
     }
   }
