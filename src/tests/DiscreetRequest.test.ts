@@ -180,13 +180,6 @@ describe('DiscreeetRequest', () => {
       }
     }); 
 
-    it('should rotate the most recently used proxy to the end of the pool', () => {
-        const { proxy, url: proxyUrl} = discreet.getProxy(); 
-        const p = discreet.pool[discreet.pool.length - 1];
-        expect(proxy).toEqual(p);
-        expect(proxyUrl).toEqual(`${config.protocol}://${p}`); 
-    }); 
-
     it('should return null if there are no proxies in the pool', () => {
       discreet.pool = []; 
       const { proxy, url: proxyUrl} = discreet.getProxy(); 
@@ -258,10 +251,9 @@ describe('DiscreeetRequest', () => {
       await discreet.request(endpoint, options);
       // Verify the configured proxy
       const requestOptions = throttler.mock.calls[0][1];
-      const username = defaultConfig?.proxyAuth?.username; 
-      const password = defaultConfig?.proxyAuth?.password; 
-      const proxy = discreet.pool[discreet.pool.length - 1]; 
-      const proxyUrl = `http://${username}:${password}@${proxy}`;
+      const auth = defaultConfig?.proxyAuth;
+      const proxy = discreet.pool[0]; 
+      const proxyUrl = `http://${auth?.username}:${auth?.password}@${proxy}`;
       expect(requestOptions.proxy).toEqual(proxyUrl); 
     }); 
 

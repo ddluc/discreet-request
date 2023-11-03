@@ -25,6 +25,8 @@ class DiscreetRequest {
   proxyAuth: Nullable<{ username: string, password: string }>;
   
   protocol: RequestProtocol;
+
+  index: number;
   
   pool: Proxy[]; 
 
@@ -45,11 +47,11 @@ class DiscreetRequest {
 /**
  * @description sets the default options for the DiscreetRequest instance
  */
-  constructor() {
+  constructor(throttler: Throttler = new Throttler()) {
     // flag to determine if the instance has been properly initialized
     this.initComplete = false;
     // Placeholder for the throttler instance
-    this.throttler = new Throttler(); 
+    this.throttler = throttler;
     // The redis client instance
     this.redis = null;
     // Enable / disable cache 
@@ -64,6 +66,8 @@ class DiscreetRequest {
     this.proxyAuth = null;
     // the protocol to use for the proxies
     this.protocol = 'https';
+    // The pool index
+    this.index = 0; 
     // the pool of healthy proxies
     this.pool = [];
     // Failure cases 
@@ -127,9 +131,9 @@ class DiscreetRequest {
   /**
    * Removes a proxy from the pool if it's deemed inoperable
    */
-  removeProxy(proxy: Proxy) {
+  removeProxy(proxy: Proxy, code: number | string) {
     if (!this.pool.includes(proxy)) return; 
-    logger.warn(`Dropping proxy: ${proxy}`);
+    logger.warn(`Dropping proxy: ${proxy} with code ${code}`);
     this.pool = this.pool.filter(p => p !== proxy);
     logger.warn(`Remaining available proxies: ${this.pool.length}`);
   } 
@@ -152,13 +156,14 @@ class DiscreetRequest {
   getProxy(): { proxy: Nullable<Proxy>, url: Nullable<string>} {
     if (this.pool.length === 0) return { proxy: null, url: null }; 
     let url = null; 
+    if (this.index  >= this.pool.length) this.index = 0; 
     // Grab the first available proxy 
-    const proxy = this.pool.shift() || null; 
-    // If there is an available proxy, build the url and return the proxy to the pool
+    const proxy = this.pool[this.index]; 
+    // If there is an available proxy, build
     if (proxy) {
       url = this.buildProxyUrl(proxy);
-      this.pool.push(proxy); 
     }
+    this.index++; 
     return  { proxy, url }
   }
 
@@ -202,7 +207,7 @@ class DiscreetRequest {
   }
 
   /**
-   * @description tests the entire list of proxies against the target endpoints
+   * @description tests the entire list of proxies against a target endpoint
    */
   async compose(url: string, requestOptions: RequestOptions = {}): Promise<void> {
     this.pool = []; 
@@ -218,7 +223,7 @@ class DiscreetRequest {
       const result = await this.throttler.queue(url, options);
       const {err, response: { statusCode, statusMessage} } = result; 
       if (err) { 
-        logger.error(err);
+        logger.error(`Unexpected Network Error`);
         continue; 
       }
       if (this.isProxyOperable(statusCode)) {
@@ -263,15 +268,10 @@ class DiscreetRequest {
     const result = await this.throttler.queue(url, options);
     const { err, response, body } = result;
     // Handle the request errors
-    if (err) {
-      console.error(err);
-      const msg = `Could not complete request to ${url}`;
-      logger.error(msg)
-      throw new NetworkError(msg);
-    }
+    if (err) throw new NetworkError(`Could not complete request to ${url}: ${err}`);
     // If the proxy fails, remove it from the pool
     if (proxy && !this.isProxyOperable(response.statusCode)) {
-      this.removeProxy(proxy);
+      this.removeProxy(proxy, response.statusCode);
       if (attempt >= 3) {
         logger.info(`Max retries hit for ${url}`);
         // Send the discreet response
