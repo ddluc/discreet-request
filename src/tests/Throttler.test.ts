@@ -1,6 +1,7 @@
 import request from 'request';
 import Throttler from '../lib/Throttler';
 import mockResponses from './__mocks/responses'
+import { RequestOptions } from '../types';
 
 jest.useFakeTimers();
 
@@ -9,6 +10,10 @@ jest.mock('request', () => {
     cb(null, mockResponses.success.response, mockResponses.success.body);
   });
 });
+
+const defaultOptions: RequestOptions = { 
+  proxy: 'username:pass@123.45.67.890'
+}
 
 describe('Throttler', () => {
 
@@ -25,8 +30,8 @@ describe('Throttler', () => {
     const url1 = 'http://example.com/1';
     const url2 = 'http://example.com/2';
 
-    const promise1 = throttler.queue(url1, {});
-    const promise2 = throttler.queue(url2, {});
+    const promise1 = throttler.queue(url1, defaultOptions);
+    const promise2 = throttler.queue(url2, defaultOptions);
 
     const startTime = Date.now();
     
@@ -51,9 +56,9 @@ describe('Throttler', () => {
     const url2 = 'http://example.com/2';
     const url3 = 'http://example.com/3';
 
-    const promise1 = throttler.queue(url1, {});
-    const promise2 = throttler.queue(url2, {});
-    const promise3 = throttler.queue(url3, {});
+    const promise1 = throttler.queue(url1, defaultOptions);
+    const promise2 = throttler.queue(url2, defaultOptions);
+    const promise3 = throttler.queue(url3, defaultOptions);
 
     const startTime = Date.now();
     
@@ -80,7 +85,7 @@ describe('Throttler', () => {
     const url2 = 'http://example.com/2';
     const url3 = 'http://example.com/3';
 
-    const promise = throttler.queue(url1, {});
+    const promise = throttler.queue(url1, defaultOptions);
 
     const startTime = Date.now();
     

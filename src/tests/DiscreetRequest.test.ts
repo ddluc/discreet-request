@@ -2,6 +2,7 @@ import DiscreetRequest from "../lib/DiscreetRequest";
 import Throttler from "../lib/Throttler";
 import { MainConfig } from "../types";
 import DEFAULT_USER_AGENTS from '../util/userAgents';
+import mockThrottler from "./__mocks/throttler";
 import mockRedisClient from './__mocks/redis';
 import mockResponses from "./__mocks/responses";
 import { Response } from "../types";
@@ -29,7 +30,7 @@ describe('DiscreeetRequest', () => {
     protocol: 'http',
     throttle: {
       count: 3, 
-      milliseconds: 10000
+      milliseconds: 50000
     },
     redis: mockRedisClient,
     cache: false,
@@ -37,23 +38,12 @@ describe('DiscreeetRequest', () => {
     userAgents: DEFAULT_USER_AGENTS
   }
 
-  /**
-   * Utility function to mock the throttler queue (i.e. network request)
-   * @param pool 
-   * @param key 
-   */
-  const mockThrottler = (discreet: DiscreetRequest, key: string) => {
-    return jest
-    .spyOn(discreet.throttler, 'queue')
-    .mockImplementation((...args: any[]): Promise<Response> => {
-      const response = {
-        err: null,
-        response: mockResponses[key],
-        body: mockResponses[key].body,
-      } as Response;
-      return Promise.resolve(response);
-    });
-  }
+  const setup = (key = 'success', config = defaultConfig,) => {
+    const throttler = mockThrottler();
+    const discreet = new DiscreetRequest(config, throttler);
+    return { discreet, throttler }
+  };
+
 
   afterEach(() => {
     jest.clearAllMocks(); 
@@ -62,26 +52,15 @@ describe('DiscreeetRequest', () => {
 
   describe('#constructor', () => {
     it ('should instantiate a new Discreet Request class', () => {
-      let discreet = new DiscreetRequest(); 
+      const { discreet } = setup(); 
       expect(discreet).toBeInstanceOf(DiscreetRequest);
-      discreet.throttler.stop(); 
     });
   });
 
   describe('#init', () => {
-    
-    let discreet: DiscreetRequest; 
-
-    beforeEach(() => {
-      discreet = new DiscreetRequest();
-    }); 
-
-    afterEach(() => {
-      discreet.throttler.stop(); 
-    });
 
     it('should set the default values for all configuration options that are not defined', async () => {
-      await discreet.init(); 
+      const discreet = new DiscreetRequest({}); 
       // Verify proxy Pool config
       expect(discreet.proxies).toEqual([]);
       expect(discreet.proxyAuth).toEqual(null);
@@ -92,9 +71,10 @@ describe('DiscreeetRequest', () => {
       // Verify Redis config 
       expect(discreet.redis).toEqual(null); 
       expect(discreet.cacheTTL).toEqual(86400);
+      discreet.throttler.stop(); 
     });
     it('should configure the instance with the user configuration options', async () => {
-      await discreet.init(defaultConfig); 
+      const discreet = new DiscreetRequest(defaultConfig);
       // Verify proxy Pool config
       expect(discreet.proxies).toEqual(defaultConfig?.proxies);
       expect(discreet.proxyAuth).toEqual(defaultConfig?.proxyAuth);
@@ -105,6 +85,7 @@ describe('DiscreeetRequest', () => {
       // Verify Redis config 
       expect(discreet.redis).toEqual(defaultConfig.redis); 
       expect(discreet.cacheTTL).toEqual(defaultConfig.cacheTTL);
+      discreet.throttler.stop(); 
     }); 
   }); 
 
@@ -127,20 +108,11 @@ describe('DiscreeetRequest', () => {
 
   describe('#buildProxyUrl', () => {
 
-    let discreet: DiscreetRequest; 
-
-    beforeEach(() => {
-      discreet = new DiscreetRequest();
-    }); 
-
-    afterEach(() => {
-      discreet.throttler.stop(); 
-    }); 
     
     it('should build a valid URL with protocol authentication', () => {
       const config = { ...defaultConfig };
+      const { discreet } = setup(); 
       const proxy = '123.12.34.12:80';
-      discreet.init(config);
       const proxyUrl = discreet.buildProxyUrl(proxy);
       const expectedUrl = `${config.protocol}://${config?.proxyAuth?.username}:${config?.proxyAuth?.password}@${proxy}`;
       expect(proxyUrl).toBe(expectedUrl);
@@ -148,8 +120,8 @@ describe('DiscreeetRequest', () => {
   
     it('should build a valid URL without authentication when none is provided', () => {
       const config = { ...defaultConfig, proxyAuth: null };
+      const { discreet } = setup('success', config); 
       const proxy = '123.12.34.12:80';
-      discreet.init(config);
       const proxyUrl = discreet.buildProxyUrl(proxy);
       const expectedUrl = `http://${proxy}`;
       expect(proxyUrl).toBe(expectedUrl);
@@ -159,19 +131,10 @@ describe('DiscreeetRequest', () => {
 
   describe('#getProxy', () => {
 
-    let discreet: DiscreetRequest; 
-    const config = {...defaultConfig, proxyAuth: null };
-
-    beforeEach(() => {
-      discreet = new DiscreetRequest();
-      discreet.init(config);
-    }); 
-
-    afterEach(() => {
-      discreet.throttler.stop(); 
-    }); 
 
     it('should return the get next available proxy in the pool', () => {
+      const config = {...defaultConfig, proxyAuth: null };
+      const { discreet } = setup('success', config); 
       const proxies = [...discreet.pool];
       for (const p of proxies) {
         const { proxy, url: proxyUrl} = discreet.getProxy(); 
@@ -181,11 +144,14 @@ describe('DiscreeetRequest', () => {
     }); 
 
     it('should return null if there are no proxies in the pool', () => {
+      const config = {...defaultConfig, proxyAuth: null };
+      const { discreet } = setup('success', config); 
       discreet.pool = []; 
       const { proxy, url: proxyUrl} = discreet.getProxy(); 
       expect(proxy).toBeNull();
       expect(proxyUrl).toBeNull();
     });
+
   });
 
   describe('#setEndpointCache', () => {
@@ -203,25 +169,15 @@ describe('DiscreeetRequest', () => {
 
   describe('#request', () => {
 
-    let discreet: DiscreetRequest; 
-
-    beforeEach(async () => {
-      discreet = new DiscreetRequest();
-      discreet.init(defaultConfig);
-    });
-
-    afterEach( async () => {
-      discreet.throttler.stop(); 
-    }); 
-
     it('should make a request to the provided url with a proxy and user agent', async () => {
-      const throttler = mockThrottler(discreet, 'success');
+      const { discreet, throttler } = setup();
+      const queue = jest.spyOn(throttler, 'queue');
       let endpoint = 'http://mytestendpoint.com';
       const options = { method: 'PUT'};
       const response = await discreet.request(endpoint, options);
       // Verify the throttler call
-      const url = throttler.mock.calls[0][0];
-      const { method } = throttler.mock.calls[0][1];
+      const url = queue.mock.calls[0][0];
+      const { method } = queue.mock.calls[0][1];
       expect(url).toEqual(endpoint);
       expect(method).toEqual('PUT');
       // Verify the response 
@@ -235,22 +191,24 @@ describe('DiscreeetRequest', () => {
     });
 
     it('should automatically configure the user agent', async () => {
-      const throttler = mockThrottler(discreet, 'success');
+      const { discreet, throttler } = setup();
+      const queue = jest.spyOn(throttler, 'queue');
       let endpoint = 'http://mytestendpoint.com';
       const options = { method: 'PUT'};
       await discreet.request(endpoint, options);
       // Verify the request user agent
-      const { headers = {} } = throttler.mock.calls[0][1];
+      const { headers = {} } = queue.mock.calls[0][1];
       expect(headers['User-Agent']).toBeDefined(); 
     }); 
 
     it('should automatically assign a proxy', async () => {
-      const throttler = mockThrottler(discreet, 'success');
+      const { discreet, throttler } = setup();
+      const queue = jest.spyOn(throttler, 'queue');
       let endpoint = 'http://mytestendpoint.com';
       const options = { method: 'PUT'};
       await discreet.request(endpoint, options);
       // Verify the configured proxy
-      const requestOptions = throttler.mock.calls[0][1];
+      const requestOptions = queue.mock.calls[0][1];
       const auth = defaultConfig?.proxyAuth;
       const proxy = discreet.pool[0]; 
       const proxyUrl = `http://${auth?.username}:${auth?.password}@${proxy}`;
@@ -258,7 +216,7 @@ describe('DiscreeetRequest', () => {
     }); 
 
     it ('should automatically fetch the data from cache, if it exists', async () => {
-      const throttler = mockThrottler(discreet, 'success');
+      const { discreet } = setup();
       let endpoint = 'http://mytestendpoint.com';
       const options = { method: 'PUT'};
       const response = await discreet.request(endpoint, options, true);
@@ -268,29 +226,12 @@ describe('DiscreeetRequest', () => {
       expect(response.raw).toBeNull(); 
     }); 
     
-    it('it should throw a RequestError if you attempt to make a request before .init() is called on the instance', async () => {
-      discreet = new DiscreetRequest();
-      const throttler = mockThrottler(discreet, 'success');
-      try {
-        let endpoint = 'http://mytestendpoint.com';
-        const options = { method: 'PUT'};
-        const response = await discreet.request(endpoint, options, true);
-      } catch(err) {
-        if (err instanceof Error) expect(err?.name).toEqual('RequestError');
-        else {
-          fail('it should throw a request error');
-        }
-      }
-    });
-
     it('should throw a ProxyError if the authentication to the proxy is unsuccessful', async () => {
-      discreet = new DiscreetRequest();
-      await discreet.init(); 
-      const throttler = mockThrottler(discreet, 'proxyError');
+      const { discreet } = setup('proxyError');
       try {
         let endpoint = 'http://mytestendpoint.com';
         const options = { method: 'PUT'};
-        const response = await discreet.request(endpoint, options, true);
+        await discreet.request(endpoint, options, true);
       } catch(err) {
         if (err instanceof Error) expect(err?.name).toEqual('ProxyError');
         else {
@@ -300,13 +241,11 @@ describe('DiscreeetRequest', () => {
     });
 
     it('should throw a NetworkError if there is an error in the request', async () => {
-      discreet = new DiscreetRequest();
-      await discreet.init(defaultConfig); 
-      const throttler = mockThrottler(discreet, 'serverError');
+      const { discreet } = setup('serverError');
       try {
         let endpoint = 'http://mytestendpoint.com';
         const options = { method: 'PUT' };
-        const response = await discreet.request(endpoint, options, true);
+        await discreet.request(endpoint, options, true);
       } catch(err) {
         if (err instanceof Error) expect(err?.name).toEqual('NetworkError');
         else {
@@ -316,9 +255,8 @@ describe('DiscreeetRequest', () => {
     });
 
     it('should throw a proxy error if there are no available proxies', async () => {
-      discreet = new DiscreetRequest();
-      await discreet.init(); 
-      const throttler = mockThrottler(discreet, 'success');
+      const { discreet } = setup();
+      discreet.pool = []; 
       try {
         let endpoint = 'http://mytestendpoint.com';
         const options = { method: 'PUT'};
@@ -332,9 +270,7 @@ describe('DiscreeetRequest', () => {
     });
 
     it('should cache the request if the cache is enabled', async () => {
-      discreet = new DiscreetRequest();
-      await discreet.init({ ...defaultConfig, cache: true, redis: mockRedisClient }); 
-      const throttler = mockThrottler(discreet, 'success');
+      const { discreet } = setup('success', { ...defaultConfig, cache: true, redis: mockRedisClient });
       const redis = discreet.redis || mockRedisClient; 
       const set = jest.spyOn(redis, 'set'); 
       let endpoint = 'http://mytestendpoint.com';
@@ -342,6 +278,11 @@ describe('DiscreeetRequest', () => {
       await discreet.request(endpoint, options, false);
       expect(set).toHaveBeenCalled(); 
     });
+
+    it.todo('should flag a proxy after it fails to complete a request');
+
+    it.todo('should automatically retry the request if it fails');
+
 
   });
 

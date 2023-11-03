@@ -18,8 +18,6 @@ import type {
 
 class DiscreetRequest {
 
-  private initComplete: boolean;
-
   proxies: Proxy[]; 
   
   proxyAuth: Nullable<{ username: string, password: string }>;
@@ -47,36 +45,7 @@ class DiscreetRequest {
 /**
  * @description sets the default options for the DiscreetRequest instance
  */
-  constructor(throttler: Throttler = new Throttler()) {
-    // flag to determine if the instance has been properly initialized
-    this.initComplete = false;
-    // Placeholder for the throttler instance
-    this.throttler = throttler;
-    // The redis client instance
-    this.redis = null;
-    // Enable / disable cache 
-    this.cache = false;
-    // the default cache expiration (1 day):
-    this.cacheTTL = 0;
-    // list of user agents, with provided defaults
-    this.userAgents = [];
-    // the proxies
-    this.proxies = [];
-    // the proxy authentication
-    this.proxyAuth = null;
-    // the protocol to use for the proxies
-    this.protocol = 'https';
-    // The pool index
-    this.index = 0; 
-    // the pool of healthy proxies
-    this.pool = [];
-    // Failure cases 
-    this.failureCases = [407, 403, 408, 401, 418]; 
-    // Set the max number of retries after a failed request 
-    this.maxRetries = 3;
-  }
-
-  init(config: MainConfig = {}) {
+  constructor(config: MainConfig, throttler?: Throttler) {
     const {
       throttle = {},
       userAgents = DEAFULT_USER_AGENTS,
@@ -89,22 +58,31 @@ class DiscreetRequest {
       maxRetries = 3,
       protocol = 'http',
     } = config;
-    // Setup the throttler 
-    this.throttler = new Throttler(throttle);
-    // Configure the proxy pool 
+    // Setup the throttler (with optional dependency injection for tests)
+    this.throttler = throttler || new Throttler(throttle);
+    // The users proxies
     this.proxies = proxies; 
+    // The pool of healthy proxies
     this.pool = this.proxies;
+    // The pool index
+    this.index = 0;
+    // the proxy authentication
     this.proxyAuth = proxyAuth; 
+    // The list of HTTP status codes which indicate a dead proxy
     this.failureCases = failureCases; 
+    // The max number of retries on a request with a failed proxy
     this.maxRetries = maxRetries; 
+    // the protocol to use for the proxies
     this.protocol = protocol; 
+    // list of user agents, with provided defaults
     this.userAgents = userAgents;
-    // Setup caching, if enabled
+    // The redis client instance
     this.redis = redis;
+    // Enable / disable cache 
     this.cache = (cache && !!redis); 
-    this.cacheTTL = cacheTTL,
-    this.initComplete = true;
-    logger.info('Discreet requests are enabled');
+    // the default cache expiration (1 day):
+    this.cacheTTL = cacheTTL;
+
   }
 
   /**
@@ -241,11 +219,6 @@ class DiscreetRequest {
    * @param {object} requestOptions - request object to be forwarded to the node request library
    */
   async request(url: string, requestOptions: RequestOptions = {}, fromCache = this.cache, attempt=1): Promise<DiscreetResponse> {
-    // Verify instance initialization
-    if (!this.initComplete) {
-      logger.warn('You must first init the discreet instance before making a request calling discreet.init(...)');
-      throw new RequestError('Discreet was not initialized');
-    }
     // Fetch the endpoint cache 
     if (fromCache) { 
       const data = await this.loadEndpointCache(url); 
