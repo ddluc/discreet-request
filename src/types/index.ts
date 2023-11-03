@@ -2,6 +2,16 @@ import {
   CoreOptions, Response as CoreResponse
 } from "request";
 
+/**
+ * Logger
+ */
+
+export interface Logger { 
+  info: (msg: string) => void 
+  warn: (msg: string) => void
+  error: (msg: string) => void
+  dev: (msg: string) => void
+}
 
 /**
  * Redis Client
@@ -46,6 +56,10 @@ export type MainConfig = {
   redis?: Nullable<any>
   cache?: boolean
   cacheTTL?: number
+  logs?: { 
+    enabled: boolean
+    level: number
+  }
 }
 
 export type RequestOptions = CoreOptions; 

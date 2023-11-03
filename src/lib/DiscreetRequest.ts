@@ -1,7 +1,7 @@
 
 import Throttler from "./Throttler";
 import DEAFULT_USER_AGENTS from '../util/userAgents';
-import { NetworkError, RequestError, ProxyError, RedisError } from "../util/error";
+import { NetworkError, ProxyError, RedisError } from "../util/error";
 import logger from "../util/logger";
 
 import type { 
@@ -13,6 +13,7 @@ import type {
   StatusCode, 
   Proxy, 
   RequestProtocol,
+  Logger
 } from "../types";
 
 
@@ -42,12 +43,14 @@ class DiscreetRequest {
 
   throttler: Throttler;
 
+  logger: Logger;
+
 /**
  * @description sets the default options for the DiscreetRequest instance
  */
   constructor(config: MainConfig, throttler?: Throttler) {
     const {
-      throttle = {},
+      throttle = { debug: false },
       userAgents = DEAFULT_USER_AGENTS,
       redis = null,
       cache = false,
@@ -57,9 +60,10 @@ class DiscreetRequest {
       failureCases = [407, 403, 408, 401, 418],
       maxRetries = 3,
       protocol = 'http',
+      logs = { enabled: true, level: 2 }
     } = config;
     // Setup the throttler (with optional dependency injection for tests)
-    this.throttler = throttler || new Throttler(throttle);
+    this.throttler = throttler || new Throttler({...throttle, debug: logs.enabled});
     // The users proxies
     this.proxies = proxies; 
     // The pool of healthy proxies
@@ -82,7 +86,8 @@ class DiscreetRequest {
     this.cache = (cache && !!redis); 
     // the default cache expiration (1 day):
     this.cacheTTL = cacheTTL;
-
+    // logger
+    this.logger= logger(logs.enabled, logs.level);
   }
 
   /**
@@ -111,9 +116,9 @@ class DiscreetRequest {
    */
   removeProxy(proxy: Proxy, code: number | string) {
     if (!this.pool.includes(proxy)) return; 
-    logger.warn(`Dropping proxy: ${proxy} with code ${code}`);
+    this.logger.warn(`Dropping proxy: ${proxy} with code ${code}`);
     this.pool = this.pool.filter(p => p !== proxy);
-    logger.warn(`Remaining available proxies: ${this.pool.length}`);
+    this.logger.warn(`Remaining available proxies: ${this.pool.length}`);
   } 
 
   /**
@@ -161,10 +166,10 @@ class DiscreetRequest {
    * Stores the data returned from an endpoint in the redis cache.
    */
   async setEndpointCache(endpoint: string, data: any): Promise<void> {
-    logger.info(`Setting endpoint data to cache: ${endpoint}`);
+    this.logger.info(`Setting endpoint data to cache: ${endpoint}`);
     // check to make sure that redis is configured
     if (this.redis) {
-      logger.info(`Caching Endpoint: ${endpoint}`);
+      this.logger.info(`Caching Endpoint: ${endpoint}`);
       await this.redis.set(endpoint, data.toString(), 'EX', this.cacheTTL);
     } else {
       throw new RedisError('No redis instance is configred, cannot cache request'); 
@@ -178,7 +183,7 @@ class DiscreetRequest {
     if (!this.redis) return null;
     else {
       const data = await this.redis.get(endpoint);
-      logger.info(`[CACHE]: Loading endpoint from cache: ${endpoint}: ${data}`);
+      this.logger.info(`[CACHE]: Loading endpoint from cache: ${endpoint}: ${data}`);
       if (data === null) return null;
       return data;
     }
@@ -189,7 +194,7 @@ class DiscreetRequest {
    */
   async compose(url: string, requestOptions: RequestOptions = {}): Promise<void> {
     this.pool = []; 
-    logger.dev(`Composing proxy pool...`);
+    this.logger.dev(`Composing proxy pool...`);
     for (const proxy of this.proxies) {
       const proxyUrl = this.buildProxyUrl(proxy);
       // Build the request options
@@ -201,14 +206,14 @@ class DiscreetRequest {
       const result = await this.throttler.queue(url, options);
       const {err, response: { statusCode, statusMessage} } = result; 
       if (err) { 
-        logger.error(`Unexpected Network Error`);
+        this.logger.error(`Unexpected Network Error`);
         continue; 
       }
       if (this.isProxyOperable(statusCode)) {
         this.pool.push(proxy);
-        logger.info(`Proxy ${proxy} passed health test with status code ${statusCode} ${statusMessage}`);
+        this.logger.info(`Proxy ${proxy} passed health test with status code ${statusCode} ${statusMessage}`);
       } else { 
-        logger.warn(`Proxy ${proxy} failed health test with status code ${statusCode} ${statusMessage} `)
+        this.logger.warn(`Proxy ${proxy} failed health test with status code ${statusCode} ${statusMessage} `)
       }
     }
   }; 
@@ -228,7 +233,7 @@ class DiscreetRequest {
     const { proxy = null, url: proxyUrl = null } = this.getProxy();
     // Verify available proxies
     if (!proxyUrl) {
-      logger.error('No Proxies available');
+      this.logger.error('No Proxies available');
       throw new ProxyError('No proxies available');
     }
     // Build the request options
@@ -246,12 +251,12 @@ class DiscreetRequest {
     if (proxy && !this.isProxyOperable(response.statusCode)) {
       this.removeProxy(proxy, response.statusCode);
       if (attempt >= 3) {
-        logger.info(`Max retries hit for ${url}`);
+        this.logger.info(`Max retries hit for ${url}`);
         // Send the discreet response
         return this.sendResponse({ body, statusCode: response.statusCode, raw: response});
       } else {
         // Retry the request
-        logger.dev(`Retrying request to ${url}`);
+        this.logger.dev(`Retrying request to ${url}`);
         return this.request(url, requestOptions, fromCache, attempt + 1); 
       }
     }

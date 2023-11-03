@@ -1,6 +1,7 @@
 import mockResponses from './responses';
-import { RequestOptions, Response, Nullable, InstanceProperties } from '../../types';import Throttler from '../../lib/Throttler';
+import { RequestOptions, Response, Nullable, InstanceProperties, Logger } from '../../types';import Throttler from '../../lib/Throttler';
 import EventEmitter from "events";
+import logger from '../../util/logger';
 
 const mockThrottler = (key: string = 'success'): Throttler => {
 
@@ -15,6 +16,8 @@ const mockThrottler = (key: string = 'success'): Throttler => {
     count: number; 
     milliseconds: number; 
     interval: Nullable<NodeJS.Timeout>;
+    debug: boolean;
+    logger: Logger;
 
     constructor(config: ThrottlerConfig = {}) {
       const { count = 1, milliseconds = 1000 } = config;
@@ -22,6 +25,8 @@ const mockThrottler = (key: string = 'success'): Throttler => {
       this.requests = [];
       this.count = count;
       this.milliseconds = milliseconds;
+      this.debug = false;
+      this.logger = logger(false, 0);
       this.interval = null; 
     }
 

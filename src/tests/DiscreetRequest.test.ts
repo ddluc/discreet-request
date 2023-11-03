@@ -35,7 +35,11 @@ describe('DiscreeetRequest', () => {
     redis: mockRedisClient,
     cache: false,
     cacheTTL: 60000,
-    userAgents: DEFAULT_USER_AGENTS
+    userAgents: DEFAULT_USER_AGENTS,
+    logs: { 
+      enabled: false, 
+      level: -1
+    }
   }
 
   const setup = (key = 'success', config = defaultConfig,) => {
