@@ -42,10 +42,12 @@ class Throttler {
   }
 
   async stop() {
+    logger.dev('Clearing throttler interval');
     if (this.interval) clearInterval(this.interval);
   }
 
   async exec (url: string, options: RequestOptions): Promise<Response> {
+    logger.dev(`Generating discreet request to ${url} with ${options.proxy}`);
     return new Promise((resolve, reject) => {
       request(url, options, (err, response, body) => {
         resolve({err, response, body});

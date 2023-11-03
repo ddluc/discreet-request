@@ -161,7 +161,6 @@ describe('DiscreeetRequest', () => {
 
     let discreet: DiscreetRequest; 
     const config = {...defaultConfig, proxyAuth: null };
-    const proxies = defaultConfig.proxies || [];
 
     beforeEach(() => {
       discreet = new DiscreetRequest();
@@ -172,12 +171,20 @@ describe('DiscreeetRequest', () => {
       discreet.throttler.stop(); 
     }); 
 
-    it('should return the next available proxy in the pool', () => {
-      proxies.forEach((p, i) => {
+    it('should return the get next available proxy in the pool', () => {
+      const proxies = [...discreet.pool];
+      for (const p of proxies) {
         const { proxy, url: proxyUrl} = discreet.getProxy(); 
         expect(proxy).toEqual(p);
-        expect(proxyUrl).toEqual(`${config.protocol}://${proxies[i]}`);
-      })
+        expect(proxyUrl).toEqual(`${config.protocol}://${p}`); 
+      }
+    }); 
+
+    it('should rotate the most recently used proxy to the end of the pool', () => {
+        const { proxy, url: proxyUrl} = discreet.getProxy(); 
+        const p = discreet.pool[discreet.pool.length - 1];
+        expect(proxy).toEqual(p);
+        expect(proxyUrl).toEqual(`${config.protocol}://${p}`); 
     }); 
 
     it('should return null if there are no proxies in the pool', () => {
@@ -250,9 +257,12 @@ describe('DiscreeetRequest', () => {
       const options = { method: 'PUT'};
       await discreet.request(endpoint, options);
       // Verify the configured proxy
-      const { proxy } = throttler.mock.calls[0][1];
-      const proxyUrl = `http://${defaultConfig?.proxyAuth?.username}:${defaultConfig?.proxyAuth?.password}@${discreet.proxies?.shift()}`;
-      expect(proxy).toEqual(proxyUrl); 
+      const requestOptions = throttler.mock.calls[0][1];
+      const username = defaultConfig?.proxyAuth?.username; 
+      const password = defaultConfig?.proxyAuth?.password; 
+      const proxy = discreet.pool[discreet.pool.length - 1]; 
+      const proxyUrl = `http://${username}:${password}@${proxy}`;
+      expect(requestOptions.proxy).toEqual(proxyUrl); 
     }); 
 
     it ('should automatically fetch the data from cache, if it exists', async () => {

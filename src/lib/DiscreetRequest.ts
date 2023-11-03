@@ -260,7 +260,6 @@ class DiscreetRequest {
       ...requestOptions
     }; 
     // Generate the throttled request 
-    logger.dev(`Generating discreet request to ${url} with ${proxyUrl}`);
     const result = await this.throttler.queue(url, options);
     const { err, response, body } = result;
     // Handle the request errors
