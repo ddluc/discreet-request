@@ -63,7 +63,7 @@ class DiscreetRequest {
       logs = { enabled: true, level: 2 }
     } = config;
     // Setup the throttler (with optional dependency injection for tests)
-    this.throttler = throttler || new Throttler({...throttle, debug: logs.enabled});
+    this.throttler = throttler || new Throttler({...throttle });
     // The users proxies
     this.proxies = proxies; 
     // The pool of healthy proxies
@@ -166,7 +166,6 @@ class DiscreetRequest {
    * Stores the data returned from an endpoint in the redis cache.
    */
   async setEndpointCache(endpoint: string, data: any): Promise<void> {
-    this.logger.info(`Setting endpoint data to cache: ${endpoint}`);
     // check to make sure that redis is configured
     if (this.redis) {
       this.logger.info(`Caching Endpoint: ${endpoint}`);
@@ -183,7 +182,7 @@ class DiscreetRequest {
     if (!this.redis) return null;
     else {
       const data = await this.redis.get(endpoint);
-      this.logger.info(`[CACHE]: Loading endpoint from cache: ${endpoint}: ${data}`);
+      this.logger.info(`Loading endpoint from cache: ${endpoint}: ${data}`);
       if (data === null) return null;
       return data;
     }
@@ -194,7 +193,7 @@ class DiscreetRequest {
    */
   async compose(url: string, requestOptions: RequestOptions = {}): Promise<void> {
     this.pool = []; 
-    this.logger.dev(`Composing proxy pool...`);
+    this.logger.info(`Composing proxy pool...`);
     for (const proxy of this.proxies) {
       const proxyUrl = this.buildProxyUrl(proxy);
       // Build the request options
@@ -251,7 +250,7 @@ class DiscreetRequest {
     if (proxy && !this.isProxyOperable(response.statusCode)) {
       this.removeProxy(proxy, response.statusCode);
       if (attempt >= 3) {
-        this.logger.info(`Max retries hit for ${url}`);
+        this.logger.warn(`Max retries hit for ${url}`);
         // Send the discreet response
         return this.sendResponse({ body, statusCode: response.statusCode, raw: response});
       } else {

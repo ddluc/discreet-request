@@ -12,7 +12,7 @@ const logger = (enabled: boolean = true, level: number = 2): Logger => ({
    */
   'dev': function(msg='') {
     if (!enabled) return;
-    if (level >= 4) console.log(colors.green(`[DISCREET] ${msg}`));
+    if (level >= 4) console.log(colors.grey(`[DISCREET] ${msg}`));
   },
 
   /**
@@ -23,7 +23,7 @@ const logger = (enabled: boolean = true, level: number = 2): Logger => ({
    */
   'info': function(msg='') {
     if (!enabled) return;
-    if (level >= 3) console.log(colors.cyan(`[DISCREET] ${msg}`));
+    if (level >= 3) console.log(colors.green(`[DISCREET] ${msg}`));
   },
 
   /**

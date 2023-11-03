@@ -51,14 +51,15 @@ export type MainConfig = {
   throttle?: {
     count?: number
     milliseconds?: number
+    debug?: boolean
   }
   userAgents?: string[]
   redis?: Nullable<any>
   cache?: boolean
   cacheTTL?: number
   logs?: { 
-    enabled: boolean
-    level: number
+    enabled?: boolean
+    level?: number
   }
 }
 
