@@ -249,7 +249,7 @@ class DiscreetRequest {
     // If the proxy fails, remove it from the pool
     if (proxy && !this.isProxyOperable(response.statusCode)) {
       this.removeProxy(proxy, response.statusCode);
-      if (attempt >= 3) {
+      if (attempt >= this.maxRetries) {
         this.logger.warn(`Max retries hit for ${url}`);
         // Send the discreet response
         return this.sendResponse({ body, statusCode: response.statusCode, raw: response});
