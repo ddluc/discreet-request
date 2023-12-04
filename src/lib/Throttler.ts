@@ -41,7 +41,6 @@ class Throttler {
     this.logger.dev('Setting throttler interval');
     const interval = setInterval(async () => {
       const requests = this.requests.splice(0, this.count);
-      this.logger.dev(`Executing ${requests.length} requests`);
       for (const request of requests) {
         const response = await this.exec(request.url, request.options);
         this.emitter.emit(`request-${request.id}`, response);

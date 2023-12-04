@@ -107,7 +107,7 @@ class DiscreetRequest {
    * Determines whether the proxy is operable based on the request response
    */
   isProxyOperable(statusCode: StatusCode) {
-    if (this.failureCases.includes(statusCode)) return false; 
+    if (!statusCode || this.failureCases.includes(statusCode)) return false; 
     return true;
   } 
 
@@ -202,17 +202,16 @@ class DiscreetRequest {
         headers: { 'User-Agent': this.getRandomUserAgent(), ...requestOptions.headers },
         ...requestOptions
       }; 
-      const result = await this.throttler.queue(url, options);
-      const {err, response: { statusCode, statusMessage} } = result; 
-      if (err) { 
-        this.logger.error(`Unexpected Network Error`);
+      const { err, response } = await this.throttler.queue(url, options);
+      if (err || !response.statusCode) { 
+        this.logger.warn(`Proxy ${proxy} failed health test with error ${err}`);
         continue; 
       }
-      if (this.isProxyOperable(statusCode)) {
+      if (this.isProxyOperable(response.statusCode)) {
         this.pool.push(proxy);
-        this.logger.info(`Proxy ${proxy} passed health test with status code ${statusCode} ${statusMessage}`);
+        this.logger.info(`Proxy ${proxy} passed health test with status code ${response.statusCode} ${response.statusMessage}`);
       } else { 
-        this.logger.warn(`Proxy ${proxy} failed health test with status code ${statusCode} ${statusMessage} `)
+        this.logger.warn(`Proxy ${proxy} failed health test with status code ${response.statusCode} ${response.statusMessage} `)
       }
     }
   }; 
@@ -250,7 +249,6 @@ class DiscreetRequest {
     if (proxy && !this.isProxyOperable(response.statusCode)) {
       this.removeProxy(proxy, response.statusCode);
       if (attempt >= this.maxRetries) {
-        this.logger.warn(`Max retries hit for ${url}`);
         // Send the discreet response
         return this.sendResponse({ body, statusCode: response.statusCode, raw: response});
       } else {
