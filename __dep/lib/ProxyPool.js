@@ -44,8 +44,6 @@ class ProxyPool {
     this.testProxies = testProxies;
     // flag to determine if proxies should be refreshed
     this.refreshProxies = refreshProxies;
-    // internal flag for debugging
-    this.__PROXY_TEST_COUNT = 0;
   }
 
   compose() {
